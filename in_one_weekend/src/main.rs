@@ -1,4 +1,5 @@
 mod color;
+mod hittable;
 mod point;
 mod ray;
 mod vec3;
