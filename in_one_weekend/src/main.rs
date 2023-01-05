@@ -52,19 +52,33 @@ fn write_color(file: &mut std::fs::File, color: ColorRGB) -> std::io::Result<()>
 }
 
 fn ray_color(ray: Ray) -> ColorRGB {
-    if hit_sphere(&Point3::new(0.0, 0.0, -1.0), 0.5, &ray) {
-        return ColorRGB::from_binary(1.0, 0.0, 0.0);
+    let sphere_center = Point3::new(0.0, 0.0, -1.0);
+    let t = hit_sphere(&sphere_center, 0.5, &ray);
+    if t > 0.0 {
+        // -1 <= normal_line.x/y/z() <= 1
+        let normal_line: Vec3 = (ray.at(t) - sphere_center).unit_vector();
+        // (X in [-1, 1] | Y = 0.5X + 0.5) => Y in [0, 1]
+        return ColorRGB::from_binary(
+            0.5 * normal_line.x() + 0.5,
+            0.5 * normal_line.y() + 0.5,
+            0.5 * normal_line.z() + 0.5,
+        );
     }
     let unit_direction: Vec3 = ray.direction().unit_vector();
     let t: f32 = 0.5 * (unit_direction.y() + 1.0);
     (1.0 - t) * ColorRGB::from_binary(1.0, 1.0, 1.0) + t * ColorRGB::from_binary(0.5, 0.7, 1.0)
 }
 
-fn hit_sphere(sphere_center: &Point3, radius: f32, ray: &Ray) -> bool {
+fn hit_sphere(sphere_center: &Point3, radius: f32, ray: &Ray) -> f32 {
     let oc: Vec3 = ray.origin() - sphere_center;
     let a: f32 = ray.direction().dot(ray.direction());
     let b: f32 = 2.0 * ray.direction().dot(oc);
     let c: f32 = oc.dot(oc) - radius * radius;
     let discriminant: f32 = b * b - 4.0 * a * c;
-    discriminant >= 0.0
+    if discriminant < 0.0 {
+        return -1.0;
+    }
+    // 只计算与相机较近的球面相交的光线
+    // assert!(a > 0.0 && b < 0.0);
+    (-b - discriminant.sqrt()) / (2.0 * a)
 }
