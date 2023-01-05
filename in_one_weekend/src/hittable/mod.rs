@@ -1,10 +1,11 @@
-mod sphere;
+pub mod hittable_list;
+pub mod sphere;
 
 use crate::{point::Point3, ray::Ray, vec3::Vec3};
 
 pub struct HitRecord {
     p: Point3,
-    normal: Vec3,
+    pub normal: Vec3,
     t: f32,
     front_face: bool,
 }
@@ -20,6 +21,6 @@ impl HitRecord {
     }
 }
 
-pub trait Hittable {
+pub trait Hittable: Send + Sync {
     fn hit(&self, ray: &Ray, t_min: f32, t_max: f32) -> Option<HitRecord>;
 }
