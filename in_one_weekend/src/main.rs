@@ -4,15 +4,26 @@ mod point;
 mod ray;
 mod vec3;
 
-use std::{fs::File, io::Write};
+use std::{fs::File, io::Write, sync::Arc};
 
-use crate::{color::ColorRGB, point::Point3, ray::Ray, vec3::Vec3};
+use crate::{
+    color::ColorRGB,
+    hittable::{hittable_list::HittableList, sphere::Sphere, Hittable},
+    point::Point3,
+    ray::Ray,
+    vec3::Vec3,
+};
 
 fn main() -> std::io::Result<()> {
     // Image
     const ASPECT_RATIO: f32 = 16.0 / 9.0;
     const IMAGE_WIDTH: u32 = 400;
     const IMAGE_HEIGHT: u32 = (IMAGE_WIDTH as f32 / ASPECT_RATIO) as u32;
+
+    // World
+    let mut world: HittableList = HittableList::default();
+    world.add(Arc::new(Sphere::new(Point3::new(0., 0., -1.), 0.5)));
+    world.add(Arc::new(Sphere::new(Point3::new(0., -100.5, -1.), 100.)));
 
     // Camera
     const VIEWPORT_HEIGHT: f32 = 2.0;
@@ -38,7 +49,7 @@ fn main() -> std::io::Result<()> {
                 ORIGIN,
                 lower_left_corner + u * HORIZONTAL + v * VERTICAL - ORIGIN,
             );
-            let pixel_color: ColorRGB = ray_color(ray);
+            let pixel_color: ColorRGB = ray_color(ray, &world);
             write_color(&mut image, pixel_color)?;
         }
     }
@@ -52,34 +63,16 @@ fn write_color(file: &mut std::fs::File, color: ColorRGB) -> std::io::Result<()>
     Ok(())
 }
 
-fn ray_color(ray: Ray) -> ColorRGB {
-    let sphere_center = Point3::new(0.0, 0.0, -1.0);
-    let t = hit_sphere(&sphere_center, 0.5, &ray);
-    if t > 0.0 {
-        // -1 <= normal_line.x/y/z() <= 1
-        let normal_line: Vec3 = (ray.at(t) - sphere_center).unit_vector();
-        // (X in [-1, 1] | Y = 0.5X + 0.5) => Y in [0, 1]
+fn ray_color(ray: Ray, world: &dyn Hittable) -> ColorRGB {
+    if let Some(hit_record) = world.hit(&ray, 0., f32::INFINITY) {
+        let normal: Vec3 = hit_record.normal;
         return ColorRGB::from_binary(
-            0.5 * normal_line.x() + 0.5,
-            0.5 * normal_line.y() + 0.5,
-            0.5 * normal_line.z() + 0.5,
+            0.5 * normal.x() + 0.5,
+            0.5 * normal.y() + 0.5,
+            0.5 * normal.z() + 0.5,
         );
     }
     let unit_direction: Vec3 = ray.direction().unit_vector();
     let t: f32 = 0.5 * (unit_direction.y() + 1.0);
     (1.0 - t) * ColorRGB::from_binary(1.0, 1.0, 1.0) + t * ColorRGB::from_binary(0.5, 0.7, 1.0)
-}
-
-fn hit_sphere(sphere_center: &Point3, radius: f32, ray: &Ray) -> f32 {
-    let oc: Vec3 = ray.origin() - sphere_center;
-    let a: f32 = ray.direction().len_squared();
-    let half_b: f32 = ray.direction().dot(oc);
-    let c: f32 = oc.len_squared() - radius * radius;
-    let discriminant: f32 = half_b * half_b - a * c;
-    if discriminant < 0.0 {
-        return -1.0;
-    }
-    // 只计算与相机较近的球面相交的光线
-    // assert!(a > 0.0 && b < 0.0);
-    (-half_b - discriminant.sqrt()) / a
 }
