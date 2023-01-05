@@ -6,6 +6,18 @@ pub struct HitRecord {
     p: Point3,
     normal: Vec3,
     t: f32,
+    front_face: bool,
+}
+
+impl HitRecord {
+    pub fn set_face_normal(&mut self, ray: &Ray, outward_normal: Vec3) {
+        self.front_face = ray.direction().dot(outward_normal) < 0.0;
+        self.normal = if true == self.front_face {
+            outward_normal
+        } else {
+            -outward_normal
+        }
+    }
 }
 
 pub trait Hittable {
