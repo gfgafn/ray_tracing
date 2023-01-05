@@ -51,8 +51,20 @@ fn write_color(file: &mut std::fs::File, color: ColorRGB) -> std::io::Result<()>
     Ok(())
 }
 
-fn ray_color(r: Ray) -> ColorRGB {
-    let unit_direction: Vec3 = r.direction().unit_vector();
+fn ray_color(ray: Ray) -> ColorRGB {
+    if hit_sphere(&Point3::new(0.0, 0.0, -1.0), 0.5, &ray) {
+        return ColorRGB::from_binary(1.0, 0.0, 0.0);
+    }
+    let unit_direction: Vec3 = ray.direction().unit_vector();
     let t: f32 = 0.5 * (unit_direction.y() + 1.0);
     (1.0 - t) * ColorRGB::from_binary(1.0, 1.0, 1.0) + t * ColorRGB::from_binary(0.5, 0.7, 1.0)
+}
+
+fn hit_sphere(sphere_center: &Point3, radius: f32, ray: &Ray) -> bool {
+    let oc: Vec3 = ray.origin() - sphere_center;
+    let a: f32 = ray.direction().dot(ray.direction());
+    let b: f32 = 2.0 * ray.direction().dot(oc);
+    let c: f32 = oc.dot(oc) - radius * radius;
+    let discriminant: f32 = b * b - 4.0 * a * c;
+    discriminant >= 0.0
 }
