@@ -71,14 +71,14 @@ fn ray_color(ray: Ray) -> ColorRGB {
 
 fn hit_sphere(sphere_center: &Point3, radius: f32, ray: &Ray) -> f32 {
     let oc: Vec3 = ray.origin() - sphere_center;
-    let a: f32 = ray.direction().dot(ray.direction());
-    let b: f32 = 2.0 * ray.direction().dot(oc);
-    let c: f32 = oc.dot(oc) - radius * radius;
-    let discriminant: f32 = b * b - 4.0 * a * c;
+    let a: f32 = ray.direction().len_squared();
+    let half_b: f32 = ray.direction().dot(oc);
+    let c: f32 = oc.len_squared() - radius * radius;
+    let discriminant: f32 = half_b * half_b - a * c;
     if discriminant < 0.0 {
         return -1.0;
     }
     // 只计算与相机较近的球面相交的光线
     // assert!(a > 0.0 && b < 0.0);
-    (-b - discriminant.sqrt()) / (2.0 * a)
+    (-half_b - discriminant.sqrt()) / a
 }
