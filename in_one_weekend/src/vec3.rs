@@ -1,5 +1,7 @@
 use std::{fmt, ops};
 
+use crate::point::Point3;
+
 #[derive(Clone, Copy, PartialEq)]
 pub struct Vec3(pub f32, pub f32, pub f32);
 
@@ -12,6 +14,10 @@ impl fmt::Display for Vec3 {
 impl Vec3 {
     pub fn unit_vector(&self) -> Self {
         self / self.len()
+    }
+
+    pub fn random_unit_vector() -> Self {
+        Point3::random_in_unit_sphere().unit_vector()
     }
 
     pub fn dot(self, v: Self) -> f32 {

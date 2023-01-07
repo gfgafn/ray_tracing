@@ -72,7 +72,7 @@ fn ray_color(ray: Ray, world: &dyn Hittable, depth: u16) -> ColorRGB {
 
     if let Some(hit_record) = world.hit(&ray, 0.001, f32::INFINITY) {
         let target: Point3 =
-            hit_record.position() + hit_record.normal() + Point3::random_in_unit_sphere();
+            hit_record.position() + hit_record.normal() + Vec3::random_unit_vector();
         // Half the energy on each bounce were absorbed, 50% were reflected
         return 0.5
             * ray_color(
