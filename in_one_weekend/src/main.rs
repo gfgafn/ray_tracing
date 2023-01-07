@@ -108,7 +108,9 @@ fn pixel_color<const HEIGHT: usize, const WIDTH: usize, const SAMPLES: u16, cons
         green += ray_color.g() as f32;
         blue += ray_color.b() as f32;
     });
-    [red, green, blue] = [red, green, blue].map(|v| v / SAMPLES as f32);
+    // Divide the color by the number of samples and gamma-correct for gamma=2.0.
+    [red, green, blue] =
+        [red, green, blue].map(|v| (v / SAMPLES as f32).sqrt() * (u8::MAX as f32).sqrt());
     pixel_color = ColorRGB::new(red as u8, green as u8, blue as u8);
 
     pixel_color
