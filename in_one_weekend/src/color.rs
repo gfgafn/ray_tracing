@@ -1,6 +1,6 @@
 use std::ops;
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy, Default)]
 pub struct ColorRGB(u8, u8, u8);
 
 impl ColorRGB {
@@ -25,13 +25,14 @@ impl ColorRGB {
 
     /// 将RGB中各分量值的范围从 `0-1` 映射到 `0-255`
     pub fn from_binary(red: f32, green: f32, blue: f32) -> Self {
-        assert!(0.0 <= red && red <= 1.0);
-        assert!(0.0 <= green && green <= 1.0);
-        assert!(0.0 <= blue && blue <= 1.0);
+        assert!((0.0..=1.0).contains(&red));
+        assert!((0.0..=1.0).contains(&green));
+        assert!((0.0..=1.0).contains(&blue));
+
         Self(
-            (red * 255 as f32) as u8,
-            (green * 255 as f32) as u8,
-            (blue * 255 as f32) as u8,
+            (red * 255_f32) as u8,
+            (green * 255_f32) as u8,
+            (blue * 255_f32) as u8,
         )
     }
 }

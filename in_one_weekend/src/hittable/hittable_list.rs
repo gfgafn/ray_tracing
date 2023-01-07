@@ -4,13 +4,16 @@ use crate::ray::Ray;
 
 use super::{HitRecord, Hittable};
 
+#[derive(Default)]
 pub struct HittableList {
     objects: Vec<Arc<dyn Hittable>>,
 }
 
 impl HittableList {
-    pub fn new(&mut self, object: Arc<dyn Hittable>) {
-        self.objects.push(object)
+    pub fn new(object: Arc<dyn Hittable>) -> Self {
+        Self {
+            objects: vec![object],
+        }
     }
 
     pub fn add(&mut self, object: Arc<dyn Hittable>) {
@@ -36,11 +39,5 @@ impl Hittable for HittableList {
         });
 
         hit
-    }
-}
-
-impl Default for HittableList {
-    fn default() -> Self {
-        Self { objects: vec![] }
     }
 }

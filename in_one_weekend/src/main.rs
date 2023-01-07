@@ -1,18 +1,20 @@
 mod camera;
 mod color;
 mod hittable;
+mod image;
 mod point;
 mod ray;
 mod vec3;
 
-use rand;
+use rand::random;
 
-use std::{fs::File, io::Write, sync::Arc};
+use std::{sync::Arc, time};
 
 use crate::{
     camera::Camera,
     color::ColorRGB,
     hittable::{hittable_list::HittableList, sphere::Sphere, Hittable},
+    image::{PPMImg, PPMImgMagicNum},
     point::Point3,
     ray::Ray,
     vec3::Vec3,
@@ -24,7 +26,10 @@ fn main() -> std::io::Result<()> {
     // Image
     const IMAGE_WIDTH: u32 = 400;
     const IMAGE_HEIGHT: u32 = (IMAGE_WIDTH as f32 / ASPECT_RATIO) as u32;
-    const SAMPLES_PER_PIXEL: u32 = 100;
+    const SAMPLES_PER_PIXEL: u16 = 100;
+    const OUTPUT_IMAGE_PATH: &str = "./target/image.ppm";
+    let mut image =
+        PPMImg::<{ IMAGE_WIDTH as usize }, { IMAGE_HEIGHT as usize }>::new(PPMImgMagicNum::P3);
 
     // World
     let mut world: HittableList = HittableList::default();
@@ -34,38 +39,32 @@ fn main() -> std::io::Result<()> {
     // Camera
     let camera = Camera::default();
 
+    let time_render_start: time::Instant = time::Instant::now();
+
     // Render
-    const OUTPUT_IMAGE_PATH: &'static str = "./target/image.ppm";
-    let mut image = File::create(OUTPUT_IMAGE_PATH)?;
-    image.write(format!("P3\n{IMAGE_WIDTH} {IMAGE_HEIGHT}\n255\n").as_bytes())?;
-    for j in 0..IMAGE_HEIGHT {
-        print!("\rScanlines remaining: {j}");
-        for i in 0..IMAGE_WIDTH {
-            let pixel_color = pixel_color(
-                j,
-                i,
-                IMAGE_HEIGHT,
-                IMAGE_WIDTH,
-                &world,
-                &camera,
+    (0..IMAGE_HEIGHT).for_each(|row| {
+        print!("\rScanlines remaining: {row}");
+        (0..IMAGE_WIDTH).for_each(|column| {
+            let pixel_color: ColorRGB = pixel_color::<
+                { IMAGE_HEIGHT as usize },
+                { IMAGE_WIDTH as usize },
                 SAMPLES_PER_PIXEL,
-            );
-            write_color(&mut image, pixel_color)?;
-        }
-    }
+            >(row, column, &world, &camera);
+            image.set_pixel_color(row as usize, column as usize, pixel_color);
+        });
+    });
 
-    Ok(())
-}
+    println!(
+        "\nThe render took {} seconds",
+        time_render_start.elapsed().as_secs_f32()
+    );
 
-/// write a single pixel's color out to the file
-fn write_color(file: &mut std::fs::File, color: ColorRGB) -> std::io::Result<()> {
-    file.write(format!("{} {} {}\n", color.r(), color.g(), color.b()).as_bytes())?;
-    Ok(())
+    image.write_to_file(OUTPUT_IMAGE_PATH)
 }
 
 fn ray_color(ray: Ray, world: &dyn Hittable) -> ColorRGB {
     if let Some(hit_record) = world.hit(&ray, 0., f32::INFINITY) {
-        let normal: Vec3 = hit_record.normal;
+        let normal: Vec3 = hit_record.normal();
         return ColorRGB::from_binary(
             0.5 * normal.x() + 0.5,
             0.5 * normal.y() + 0.5,
@@ -77,14 +76,11 @@ fn ray_color(ray: Ray, world: &dyn Hittable) -> ColorRGB {
     (1.0 - t) * ColorRGB::from_binary(1.0, 1.0, 1.0) + t * ColorRGB::from_binary(0.5, 0.7, 1.0)
 }
 
-fn pixel_color(
+fn pixel_color<const HEIGHT: usize, const WIDTH: usize, const SAMPLES: u16>(
     row: u32,
     column: u32,
-    img_height: u32,
-    img_width: u32,
-    world: &HittableList,
+    world: &dyn Hittable,
     camera: &Camera,
-    samples_per_pixel: u32,
 ) -> ColorRGB {
     let mut pixel_color = ColorRGB::new(0, 0, 0);
     let (mut red, mut green, mut blue) = (
@@ -92,16 +88,16 @@ fn pixel_color(
         pixel_color.g() as f32,
         pixel_color.b() as f32,
     );
-    (0..samples_per_pixel).for_each(|_| {
-        let u = (column as f32 + rand::random::<f32>()) / (img_width - 1) as f32;
-        let v = ((img_height - 1 - row) as f32 + rand::random::<f32>()) / (img_height - 1) as f32;
+    (0..SAMPLES).for_each(|_| {
+        let u = (column as f32 + random::<f32>()) / (WIDTH - 1) as f32;
+        let v = ((HEIGHT - 1 - row as usize) as f32 + random::<f32>()) / (HEIGHT - 1) as f32;
         let ray: Ray = camera.get_ray(u, v);
         let ray_color: ColorRGB = ray_color(ray, world);
         red += ray_color.r() as f32;
         green += ray_color.g() as f32;
         blue += ray_color.b() as f32;
     });
-    [red, green, blue] = [red, green, blue].map(|v| v / samples_per_pixel as f32);
+    [red, green, blue] = [red, green, blue].map(|v| v / SAMPLES as f32);
     pixel_color = ColorRGB::new(red as u8, green as u8, blue as u8);
 
     pixel_color
