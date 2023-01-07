@@ -39,6 +39,15 @@ impl Vec3 {
     pub fn len_squared(&self) -> f32 {
         Self::dot(*self, *self)
     }
+
+    pub fn random_in_hemisphere(normal: Vec3) -> Self {
+        let in_unit_sphere: Vec3 = Point3::random_in_unit_sphere();
+        if 0. < in_unit_sphere.dot(normal) {
+            in_unit_sphere
+        } else {
+            -in_unit_sphere
+        }
+    }
 }
 
 impl Default for Vec3 {
