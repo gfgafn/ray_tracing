@@ -1,3 +1,5 @@
+use rand::{random, rngs::ThreadRng, thread_rng, Rng};
+
 use crate::vec3::Vec3;
 
 pub type Point3 = Vec3;
@@ -20,6 +22,28 @@ impl Point3 {
     #[inline]
     pub fn z(&self) -> f32 {
         self.2
+    }
+
+    pub fn random() -> Self {
+        Self(random(), random(), random())
+    }
+
+    pub fn random_range(min: f32, max: f32) -> Self {
+        let mut rng: ThreadRng = thread_rng();
+        Self(
+            rng.gen_range(min..max),
+            rng.gen_range(min..max),
+            rng.gen_range(min..max),
+        )
+    }
+
+    pub fn random_in_unit_sphere() -> Self {
+        loop {
+            let p: Self = Self::random_range(-1.0, 1.0);
+            if 1. >= p.len_squared() {
+                break p;
+            }
+        }
     }
 }
 

@@ -12,6 +12,11 @@ pub struct HitRecord {
 
 impl HitRecord {
     #[inline]
+    pub fn position(&self) -> Point3 {
+        self.p
+    }
+
+    #[inline]
     pub fn normal(&self) -> Vec3 {
         self.normal
     }

@@ -42,6 +42,8 @@ fn main() -> std::io::Result<()> {
     let time_render_start: time::Instant = time::Instant::now();
 
     // Render
+    const MAX_DEPTH_RAY_RECURSION: u16 = 50;
+
     (0..IMAGE_HEIGHT).for_each(|row| {
         print!("\rScanlines remaining: {row}");
         (0..IMAGE_WIDTH).for_each(|column| {
@@ -49,6 +51,7 @@ fn main() -> std::io::Result<()> {
                 { IMAGE_HEIGHT as usize },
                 { IMAGE_WIDTH as usize },
                 SAMPLES_PER_PIXEL,
+                MAX_DEPTH_RAY_RECURSION,
             >(row, column, &world, &camera);
             image.set_pixel_color(row as usize, column as usize, pixel_color);
         });
@@ -62,21 +65,29 @@ fn main() -> std::io::Result<()> {
     image.write_to_file(OUTPUT_IMAGE_PATH)
 }
 
-fn ray_color(ray: Ray, world: &dyn Hittable) -> ColorRGB {
-    if let Some(hit_record) = world.hit(&ray, 0., f32::INFINITY) {
-        let normal: Vec3 = hit_record.normal();
-        return ColorRGB::from_binary(
-            0.5 * normal.x() + 0.5,
-            0.5 * normal.y() + 0.5,
-            0.5 * normal.z() + 0.5,
-        );
+fn ray_color(ray: Ray, world: &dyn Hittable, depth: u16) -> ColorRGB {
+    if depth == 0 {
+        return ColorRGB::new(0, 0, 0);
     }
+
+    if let Some(hit_record) = world.hit(&ray, 0., f32::INFINITY) {
+        let target: Point3 =
+            hit_record.position() + hit_record.normal() + Point3::random_in_unit_sphere();
+        // Half the energy on each bounce were absorbed, 50% were reflected
+        return 0.5
+            * ray_color(
+                Ray::new(hit_record.position(), target - hit_record.position()),
+                world,
+                depth - 1,
+            );
+    }
+
     let unit_direction: Vec3 = ray.direction().unit_vector();
     let t: f32 = 0.5 * (unit_direction.y() + 1.0);
     (1.0 - t) * ColorRGB::from_binary(1.0, 1.0, 1.0) + t * ColorRGB::from_binary(0.5, 0.7, 1.0)
 }
 
-fn pixel_color<const HEIGHT: usize, const WIDTH: usize, const SAMPLES: u16>(
+fn pixel_color<const HEIGHT: usize, const WIDTH: usize, const SAMPLES: u16, const DEPTH: u16>(
     row: u32,
     column: u32,
     world: &dyn Hittable,
@@ -92,7 +103,7 @@ fn pixel_color<const HEIGHT: usize, const WIDTH: usize, const SAMPLES: u16>(
         let u = (column as f32 + random::<f32>()) / (WIDTH - 1) as f32;
         let v = ((HEIGHT - 1 - row as usize) as f32 + random::<f32>()) / (HEIGHT - 1) as f32;
         let ray: Ray = camera.get_ray(u, v);
-        let ray_color: ColorRGB = ray_color(ray, world);
+        let ray_color: ColorRGB = ray_color(ray, world, DEPTH);
         red += ray_color.r() as f32;
         green += ray_color.g() as f32;
         blue += ray_color.b() as f32;
