@@ -16,7 +16,7 @@ use crate::{
     color::{ColorRGB, ColorRGBMapTo0_1},
     hittable::{hittable_list::HittableList, sphere::Sphere, Hittable},
     image::{PPMImg, PPMImgMagicNum},
-    material::{Attenuation, Lambertian, Material, Metal},
+    material::{Attenuation, Dielectric, Lambertian, Material, Metal},
     point::Point3,
     ray::Ray,
     vec3::Vec3,
@@ -37,8 +37,8 @@ fn main() -> std::io::Result<()> {
     let mut world: HittableList<Arc<dyn Hittable>> = HittableList::new();
 
     let material_ground = Arc::new(Lambertian::new(Attenuation::new(Vec3::new(0.8, 0.8, 0.0))));
-    let material_center = Arc::new(Lambertian::new(Attenuation::new(Vec3::new(0.7, 0.3, 0.3))));
-    let material_left = Arc::new(Metal::new(Attenuation::new(Vec3::new(0.8, 0.8, 0.8)), 0.3));
+    let material_center = Arc::new(Dielectric::new(1.5));
+    let material_left = Arc::new(Dielectric::new(1.5));
     let material_right = Arc::new(Metal::new(Attenuation::new(Vec3::new(0.8, 0.6, 0.2)), 1.0));
 
     world.add(Arc::new(Sphere::new(

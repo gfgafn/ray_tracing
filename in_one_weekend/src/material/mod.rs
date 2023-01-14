@@ -1,7 +1,8 @@
+mod dielectric;
 mod lambertian;
 mod metal;
 
-pub use self::{lambertian::Lambertian, metal::Metal};
+pub use self::{dielectric::Dielectric, lambertian::Lambertian, metal::Metal};
 
 use std::ops;
 
@@ -82,4 +83,12 @@ impl ops::Mul<ColorRGBMapTo0_1> for Attenuation {
 
 fn reflect(vec_in: Vec3, normal: Vec3) -> Vec3 {
     vec_in - 2.0 * Vec3::dot(vec_in, normal) * normal
+}
+
+fn refract(unit_vec_in: Vec3, normal: Vec3, etai_over_etat: f32) -> Vec3 {
+    let cos_theta: f32 = f32::min((-unit_vec_in).dot(normal), 1.0);
+    let ray_out_perp: Vec3 = etai_over_etat * (unit_vec_in + cos_theta * normal);
+    let ray_out_parallel: Vec3 = -(1.0 - ray_out_perp.len_squared()).abs().sqrt() * normal;
+
+    ray_out_perp + ray_out_parallel
 }

@@ -27,6 +27,11 @@ impl<'a> HitRecord<'a> {
         self.material
     }
 
+    #[inline]
+    pub fn is_front_face(&self) -> bool {
+        self.front_face
+    }
+
     pub fn set_face_normal(&mut self, ray: &Ray, outward_normal: Vec3) {
         self.front_face = ray.direction().dot(outward_normal) < 0.0;
         assert!((0.95..1.05).contains(&outward_normal.len()));
