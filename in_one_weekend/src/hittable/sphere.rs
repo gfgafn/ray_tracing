@@ -1,17 +1,18 @@
-use std::sync::Arc;
-
 use crate::{material::Material, point::Point3, ray::Ray, vec3::Vec3};
 
 use super::{HitRecord, Hittable};
 
-pub struct Sphere {
+pub struct Sphere<M: AsRef<dyn Material>> {
     center: Point3,
     radius: f32,
-    material: Arc<dyn Material>,
+    material: M,
 }
 
-impl Sphere {
-    pub fn new(center: Point3, radius: f32, material: Arc<dyn Material>) -> Self {
+impl<M: AsRef<dyn Material>> Sphere<M> {
+    pub fn new(center: Point3, radius: f32, material: M) -> Self
+    where
+        M: AsRef<dyn Material>,
+    {
         Self {
             center,
             radius,
@@ -20,7 +21,7 @@ impl Sphere {
     }
 }
 
-impl Hittable for Sphere {
+impl<M: AsRef<dyn Material>> Hittable for Sphere<M> {
     fn hit(&self, ray: &Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
         let oc: Vec3 = ray.origin() - self.center;
         let a: f32 = ray.direction().len_squared();

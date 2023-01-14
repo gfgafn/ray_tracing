@@ -34,7 +34,7 @@ fn main() -> std::io::Result<()> {
         PPMImg::<{ IMAGE_WIDTH as usize }, { IMAGE_HEIGHT as usize }>::new(PPMImgMagicNum::P3);
 
     // World
-    let mut world: HittableList = HittableList::default();
+    let mut world: HittableList<Arc<dyn Hittable>> = HittableList::new();
 
     let material_ground = Arc::new(Lambertian::new(Attenuation::new(Vec3::new(0.8, 0.8, 0.0))));
     let material_center = Arc::new(Lambertian::new(Attenuation::new(Vec3::new(0.7, 0.3, 0.3))));
@@ -51,7 +51,6 @@ fn main() -> std::io::Result<()> {
         0.5,
         Arc::clone(&material_center) as Arc<dyn Material>,
     )));
-
     world.add(Arc::new(Sphere::new(
         Point3::new(-1.0, 0.0, -1.0),
         0.5,
@@ -117,25 +116,17 @@ fn pixel_color<const HEIGHT: usize, const WIDTH: usize, const SAMPLES: u16, cons
     world: &dyn Hittable,
     camera: &Camera,
 ) -> ColorRGB {
-    let mut pixel_color = ColorRGB::new(0, 0, 0);
-    let (mut red, mut green, mut blue) = (
-        pixel_color.r() as f32,
-        pixel_color.g() as f32,
-        pixel_color.b() as f32,
-    );
-    (0..SAMPLES).for_each(|_| {
-        let u = (column as f32 + random::<f32>()) / (WIDTH - 1) as f32;
-        let v = ((HEIGHT - 1 - row as usize) as f32 + random::<f32>()) / (HEIGHT - 1) as f32;
-        let ray: Ray = camera.get_ray(u, v);
-        let ray_color: ColorRGB = ray_color(&ray, world, DEPTH).into();
-        red += ray_color.r() as f32;
-        green += ray_color.g() as f32;
-        blue += ray_color.b() as f32;
-    });
-    // Divide the color by the number of samples and gamma-correct for gamma=2.0.
-    [red, green, blue] =
-        [red, green, blue].map(|v| (v / SAMPLES as f32).sqrt() * (u8::MAX as f32).sqrt());
-    pixel_color = ColorRGB::new(red as u8, green as u8, blue as u8);
+    let [red, green, blue] = (0..SAMPLES)
+        .fold([0.0, 0.0, 0.0], |[r, g, b], _| {
+            let u = (column as f32 + random::<f32>()) / (WIDTH - 1) as f32;
+            let v = ((HEIGHT - 1 - row as usize) as f32 + random::<f32>()) / (HEIGHT - 1) as f32;
+            let ray: Ray = camera.get_ray(u, v);
+            let ray_color: ColorRGBMapTo0_1 = ray_color(&ray, world, DEPTH);
 
-    pixel_color
+            [r + ray_color.r(), g + ray_color.g(), b + ray_color.b()]
+        })
+        // Divide the color by the number of samples and gamma-correct for gamma=2.0.
+        .map(|v: f32| (v / SAMPLES as f32).sqrt());
+
+    ColorRGBMapTo0_1::new(red, green, blue).into()
 }
