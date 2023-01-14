@@ -4,11 +4,15 @@ use super::{reflect, Attenuation, Scatter, ScatterRecord};
 
 pub struct Metal {
     albedo: Attenuation,
+    fuzz: f32,
 }
 
 impl Metal {
-    pub fn new(albedo: Attenuation) -> Self {
-        Self { albedo }
+    pub fn new(albedo: Attenuation, fuzz: f32) -> Self {
+        Self {
+            albedo,
+            fuzz: if fuzz < 1.0 { fuzz } else { 1.0 },
+        }
     }
 }
 
@@ -22,7 +26,10 @@ impl Scatter for Metal {
         }
 
         Some(ScatterRecord::new(
-            Ray::new(hit_record.position(), reflect_direction),
+            Ray::new(
+                hit_record.position(),
+                reflect_direction + self.fuzz * Vec3::random_in_unit_sphere(),
+            ),
             self.albedo,
         ))
     }
