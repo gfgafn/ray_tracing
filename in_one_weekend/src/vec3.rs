@@ -48,6 +48,12 @@ impl Vec3 {
             -in_unit_sphere
         }
     }
+
+    /// Return true if the vector is close to zero in all dimensions.
+    pub fn is_near_zero(&self) -> bool {
+        const S: f32 = 10E-8;
+        self.0.abs() < S && self.1.abs() < S && self.2.abs() < S
+    }
 }
 
 impl Default for Vec3 {
@@ -116,10 +122,10 @@ impl ops::Mul<Vec3> for f32 {
 }
 
 impl ops::Mul<Self> for Vec3 {
-    type Output = f32;
+    type Output = Self;
 
-    fn mul(self, rhs: Self) -> Self::Output {
-        self.0 * rhs.0 + self.1 * rhs.1 + self.2 * rhs.2
+    fn mul(self, rhs: Self) -> Self {
+        Self(self.0 * rhs.0, self.1 * rhs.1, self.2 * rhs.2)
     }
 }
 
@@ -169,11 +175,12 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test() {
+    fn vec3_should_work() {
         let mut v = Vec3(1.0, 2.0, 3.0);
         assert_eq!(2.0, v[1]);
         assert_eq!(Vec3(-1.0, -2.0, -3.0), -v);
         assert_eq!(Vec3(2.0, 4.0, 6.0), v * 2f32);
+        assert_eq!(Vec3(3.0, 4.0, 3.0), v * Vec3(3.0, 2.0, 1.0));
         v += Vec3(-1.0, -2.0, -3.0);
         assert_eq!(Vec3(0.0, 0.0, 0.0), v);
         v -= Vec3(-1.0, -2.0, -3.0);

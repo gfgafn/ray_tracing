@@ -2,6 +2,7 @@ mod camera;
 mod color;
 mod hittable;
 mod image;
+mod material;
 mod point;
 mod ray;
 mod vec3;
@@ -12,9 +13,10 @@ use std::{sync::Arc, time};
 
 use crate::{
     camera::Camera,
-    color::ColorRGB,
+    color::{ColorRGB, ColorRGBMapTo0_1},
     hittable::{hittable_list::HittableList, sphere::Sphere, Hittable},
     image::{PPMImg, PPMImgMagicNum},
+    material::{Attenuation, Lambertian, Material, Metal},
     point::Point3,
     ray::Ray,
     vec3::Vec3,
@@ -33,8 +35,33 @@ fn main() -> std::io::Result<()> {
 
     // World
     let mut world: HittableList = HittableList::default();
-    world.add(Arc::new(Sphere::new(Point3::new(0., 0., -1.), 0.5)));
-    world.add(Arc::new(Sphere::new(Point3::new(0., -100.5, -1.), 100.)));
+
+    let material_ground = Arc::new(Lambertian::new(Attenuation::new(Vec3::new(0.8, 0.8, 0.0))));
+    let material_center = Arc::new(Lambertian::new(Attenuation::new(Vec3::new(0.7, 0.3, 0.3))));
+    let material_left = Arc::new(Metal::new(Attenuation::new(Vec3::new(0.8, 0.8, 0.8))));
+    let material_right = Arc::new(Metal::new(Attenuation::new(Vec3::new(0.8, 0.6, 0.2))));
+
+    world.add(Arc::new(Sphere::new(
+        Point3::new(0., -100.5, -1.),
+        100.0,
+        Arc::clone(&material_ground) as Arc<dyn Material>,
+    )));
+    world.add(Arc::new(Sphere::new(
+        Point3::new(0., 0., -1.),
+        0.5,
+        Arc::clone(&material_center) as Arc<dyn Material>,
+    )));
+
+    world.add(Arc::new(Sphere::new(
+        Point3::new(-1.0, 0.0, -1.0),
+        0.5,
+        Arc::clone(&material_left) as Arc<dyn Material>,
+    )));
+    world.add(Arc::new(Sphere::new(
+        Point3::new(1.0, 0.0, -1.0),
+        0.5,
+        Arc::clone(&material_right) as Arc<dyn Material>,
+    )));
 
     // Camera
     let camera = Camera::default();
@@ -65,26 +92,23 @@ fn main() -> std::io::Result<()> {
     image.write_to_file(OUTPUT_IMAGE_PATH)
 }
 
-fn ray_color(ray: Ray, world: &dyn Hittable, depth: u16) -> ColorRGB {
+fn ray_color(ray: &Ray, world: &dyn Hittable, depth: u16) -> ColorRGBMapTo0_1 {
     if depth == 0 {
-        return ColorRGB::new(0, 0, 0);
+        return ColorRGBMapTo0_1::new(0.0, 0.0, 0.0);
     }
 
-    if let Some(hit_record) = world.hit(&ray, 0.001, f32::INFINITY) {
-        let target: Point3 =
-            hit_record.position() + Vec3::random_in_hemisphere(hit_record.normal());
-        // Half the energy on each bounce were absorbed, 50% were reflected
-        return 0.5
-            * ray_color(
-                Ray::new(hit_record.position(), target - hit_record.position()),
-                world,
-                depth - 1,
-            );
+    if let Some(hit_record) = world.hit(ray, 0.001, f32::INFINITY) {
+        return match hit_record.material().scatter(ray, &hit_record) {
+            None => ColorRGBMapTo0_1::new(0.0, 0.0, 0.0),
+            Some(scatter_rec) => {
+                scatter_rec.albedo() * ray_color(scatter_rec.ray_scattered(), world, depth - 1)
+            }
+        };
     }
 
     let unit_direction: Vec3 = ray.direction().unit_vector();
     let t: f32 = 0.5 * (unit_direction.y() + 1.0);
-    (1.0 - t) * ColorRGB::from_binary(1.0, 1.0, 1.0) + t * ColorRGB::from_binary(0.5, 0.7, 1.0)
+    (1.0 - t) * ColorRGBMapTo0_1::new(1.0, 1.0, 1.0) + t * ColorRGBMapTo0_1::new(0.5, 0.7, 1.0)
 }
 
 fn pixel_color<const HEIGHT: usize, const WIDTH: usize, const SAMPLES: u16, const DEPTH: u16>(
@@ -103,7 +127,7 @@ fn pixel_color<const HEIGHT: usize, const WIDTH: usize, const SAMPLES: u16, cons
         let u = (column as f32 + random::<f32>()) / (WIDTH - 1) as f32;
         let v = ((HEIGHT - 1 - row as usize) as f32 + random::<f32>()) / (HEIGHT - 1) as f32;
         let ray: Ray = camera.get_ray(u, v);
-        let ray_color: ColorRGB = ray_color(ray, world, DEPTH);
+        let ray_color: ColorRGB = ray_color(&ray, world, DEPTH).into();
         red += ray_color.r() as f32;
         green += ray_color.g() as f32;
         blue += ray_color.b() as f32;
