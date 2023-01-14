@@ -9,7 +9,7 @@ mod vec3;
 
 use rand::random;
 
-use std::{sync::Arc, time};
+use std::{f32, sync::Arc, time};
 
 use crate::{
     camera::Camera,
@@ -36,39 +36,55 @@ fn main() -> std::io::Result<()> {
     // World
     let mut world: HittableList<Arc<dyn Hittable>> = HittableList::new();
 
-    let material_ground = Arc::new(Lambertian::new(Attenuation::new(Vec3::new(0.8, 0.8, 0.0))));
-    let material_center = Arc::new(Lambertian::new(Attenuation::new(Vec3::new(0.1, 0.2, 0.5))));
-    let material_left = Arc::new(Dielectric::new(1.5));
-    let material_right = Arc::new(Metal::new(Attenuation::new(Vec3::new(0.8, 0.6, 0.2)), 0.0));
+    // let material_ground = Arc::new(Lambertian::new(Attenuation::new(Vec3::new(0.8, 0.8, 0.0))));
+    // let material_center = Arc::new(Lambertian::new(Attenuation::new(Vec3::new(0.1, 0.2, 0.5))));
+    // let material_left = Arc::new(Dielectric::new(1.5));
+    // let material_right = Arc::new(Metal::new(Attenuation::new(Vec3::new(0.8, 0.6, 0.2)), 0.0));
+
+    // world.add(Arc::new(Sphere::new(
+    //     Point3::new(0., -100.5, -1.),
+    //     100.0,
+    //     Arc::clone(&material_ground) as Arc<dyn Material>,
+    // )));
+    // world.add(Arc::new(Sphere::new(
+    //     Point3::new(0., 0., -1.),
+    //     0.5,
+    //     Arc::clone(&material_center) as Arc<dyn Material>,
+    // )));
+    // world.add(Arc::new(Sphere::new(
+    //     Point3::new(-1.0, 0.0, -1.0),
+    //     0.5,
+    //     Arc::clone(&material_left) as Arc<dyn Material>,
+    // )));
+    // world.add(Arc::new(Sphere::new(
+    //     Vec3::new(-1.0, 0.0, -1.0),
+    //     -0.4,
+    //     Arc::clone(&material_left) as Arc<dyn Material>,
+    // )));
+    // world.add(Arc::new(Sphere::new(
+    //     Point3::new(1.0, 0.0, -1.0),
+    //     0.5,
+    //     Arc::clone(&material_right) as Arc<dyn Material>,
+    // )));
+
+    let r: f32 = (f32::consts::PI / 4.0).cos();
+
+    let material_left = Arc::new(Lambertian::new(Attenuation::new(Vec3::new(0.0, 0.0, 1.0))));
+    let material_right = Arc::new(Lambertian::new(Attenuation::new(Vec3::new(1.0, 0.0, 0.0))));
 
     world.add(Arc::new(Sphere::new(
-        Point3::new(0., -100.5, -1.),
-        100.0,
-        Arc::clone(&material_ground) as Arc<dyn Material>,
-    )));
-    world.add(Arc::new(Sphere::new(
-        Point3::new(0., 0., -1.),
-        0.5,
-        Arc::clone(&material_center) as Arc<dyn Material>,
-    )));
-    world.add(Arc::new(Sphere::new(
-        Point3::new(-1.0, 0.0, -1.0),
-        0.5,
+        Point3::new(-r, 0.0, -1.0),
+        r,
         Arc::clone(&material_left) as Arc<dyn Material>,
     )));
     world.add(Arc::new(Sphere::new(
-        Vec3::new(-1.0, 0.0, -1.0),
-        -0.4,
-        Arc::clone(&material_left) as Arc<dyn Material>,
-    )));
-    world.add(Arc::new(Sphere::new(
-        Point3::new(1.0, 0.0, -1.0),
-        0.5,
+        Point3::new(r, 0.0, -1.0),
+        r,
         Arc::clone(&material_right) as Arc<dyn Material>,
     )));
 
     // Camera
-    let camera = Camera::default();
+    let camera = Camera::new(90.0, ASPECT_RATIO);
 
     let time_render_start: time::Instant = time::Instant::now();
 
