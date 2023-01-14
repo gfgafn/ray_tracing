@@ -1,5 +1,7 @@
 use std::{fmt, ops};
 
+use rand::{rngs::ThreadRng, thread_rng, Rng};
+
 use crate::point::Point3;
 
 #[derive(Clone, Copy, PartialEq)]
@@ -54,6 +56,16 @@ impl Vec3 {
         const S: f32 = 10E-8;
         self.0.abs() < S && self.1.abs() < S && self.2.abs() < S
     }
+
+    pub fn random_in_unit_disk() -> Vec3 {
+        let mut rng: ThreadRng = thread_rng();
+        loop {
+            let p: Vec3 = Vec3::new(rng.gen_range(-1.0..1.0), rng.gen_range(-1.0..1.0), 0.0);
+            if 1.0 > p.len_squared() {
+                break p;
+            }
+        }
+    }
 }
 
 impl Default for Vec3 {
@@ -84,6 +96,13 @@ impl ops::AddAssign for Vec3 {
     }
 }
 
+impl ops::Add<f32> for Vec3 {
+    type Output = Self;
+    fn add(self, rhs: f32) -> Self::Output {
+        Self(self.0 + rhs, self.1 + rhs, self.2 + rhs)
+    }
+}
+
 impl ops::Sub for Vec3 {
     type Output = Self;
 
@@ -97,6 +116,14 @@ impl ops::Sub<&Self> for Vec3 {
 
     fn sub(self, rhs: &Self) -> Self::Output {
         Self(self.0 - rhs.0, self.1 - rhs.1, self.2 - rhs.2)
+    }
+}
+
+impl ops::Sub<f32> for Vec3 {
+    type Output = Self;
+
+    fn sub(self, rhs: f32) -> Self::Output {
+        Self(self.0 - rhs, self.1 - rhs, self.2 - rhs)
     }
 }
 
