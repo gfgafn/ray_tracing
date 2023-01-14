@@ -57,6 +57,11 @@ fn main() -> std::io::Result<()> {
         Arc::clone(&material_left) as Arc<dyn Material>,
     )));
     world.add(Arc::new(Sphere::new(
+        Vec3::new(-1.0, 0.0, -1.0),
+        -0.4,
+        Arc::clone(&material_left) as Arc<dyn Material>,
+    )));
+    world.add(Arc::new(Sphere::new(
         Point3::new(1.0, 0.0, -1.0),
         0.5,
         Arc::clone(&material_right) as Arc<dyn Material>,
