@@ -41,12 +41,10 @@ impl<const WIDTH: usize, const HEIGHT: usize> PPMImg<WIDTH, HEIGHT> {
             .into_iter()
             .max()
             .unwrap_or_default();
-        self.max_color_component = if 0 == self.max_color_component {
-            0
-        } else if u8::MAX == self.max_color_component {
-            u8::MAX
-        } else {
-            self.max_color_component + 1
+
+        self.max_color_component = match self.max_color_component {
+            v @ (0 | u8::MAX) => v,
+            _ => self.max_color_component + 1,
         };
 
         self.data_buffer[row][column] = color;
@@ -63,11 +61,20 @@ impl<const WIDTH: usize, const HEIGHT: usize> PPMImg<WIDTH, HEIGHT> {
             .as_bytes(),
         )?;
         for row in &self.data_buffer {
-            image.write_all(
-                row.map(|c: ColorRGB| format!("{} {} {}\n", c.r(), c.g(), c.b()))
-                    .concat()
-                    .as_bytes(),
-            )?;
+            match self.magic_number {
+                PPMImgMagicNum::P3 => {
+                    image.write_all(
+                        row.map(|c: ColorRGB| format!("{} {} {}\n", c.r(), c.g(), c.b()))
+                            .concat()
+                            .as_bytes(),
+                    )?;
+                }
+                PPMImgMagicNum::P6 => {
+                    for color in row {
+                        image.write_all(color.as_bytes())?;
+                    }
+                }
+            }
         }
 
         image.flush()
