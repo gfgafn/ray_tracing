@@ -34,12 +34,11 @@ impl<M: AsRef<dyn Material>> Hittable for Sphere<M> {
         let dis_sqrt: f32 = discriminant.sqrt();
 
         // Find the nearest root that lies in the acceptable range.
-        let mut t: f32 = (-half_b - dis_sqrt) / a;
-        if t < t_min || t_max < t {
-            t = (-half_b + dis_sqrt) / a;
-            if t < t_min || t_max < t {
-                return None;
-            }
+        // half_b < 0 && a > 0
+        // assert!((-half_b - dis_sqrt) / a <= (-half_b + dis_sqrt) / a);
+        let t: f32 = (-half_b - dis_sqrt) / a;
+        if !(t_min..=t_max).contains(&t) {
+            return None;
         }
 
         let p: Point3 = ray.at(t);

@@ -34,7 +34,7 @@ impl<'a> HitRecord<'a> {
 
     pub fn set_face_normal(&mut self, ray: &Ray, outward_normal: Vec3) {
         self.front_face = ray.direction().dot(outward_normal) < 0.0;
-        assert!((0.95..1.05).contains(&outward_normal.len()));
+        debug_assert!((0.99..1.01).contains(&outward_normal.len()));
         self.normal = match self.front_face {
             true => outward_normal,
             false => -outward_normal,

@@ -30,7 +30,7 @@ impl<H: AsRef<dyn Hittable>> Hittable for HittableList<H> {
 
         self.objects.iter().for_each(|obj: &H| {
             if let Some(hit_record) = obj.as_ref().hit(ray, t_min, closest_so_far) {
-                assert!(t_min <= hit_record.t && hit_record.t <= closest_so_far);
+                debug_assert!(t_min <= hit_record.t && hit_record.t <= closest_so_far);
                 closest_so_far = hit_record.t;
                 hit = Some(hit_record);
             }
