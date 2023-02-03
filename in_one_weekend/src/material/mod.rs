@@ -55,6 +55,14 @@ impl Attenuation {
         assert!((0.0..=1.0).contains(&val.2));
         Self(val)
     }
+
+    pub fn random() -> Self {
+        Self(Vec3::random())
+    }
+
+    pub fn random_range(min: f32, max: f32) -> Self {
+        Self(Vec3::random_range(min, max))
+    }
 }
 
 impl ops::Mul<ColorRGB> for Attenuation {
@@ -78,6 +86,14 @@ impl ops::Mul<ColorRGBMapTo0_1> for Attenuation {
             self.0 .1 * rhs.g(),
             self.0 .2 * rhs.b(),
         )
+    }
+}
+
+impl ops::Mul<Self> for Attenuation {
+    type Output = Self;
+
+    fn mul(self, rhs: Self) -> Self::Output {
+        Self(self.0 * rhs.0)
     }
 }
 

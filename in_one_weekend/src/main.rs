@@ -7,7 +7,7 @@ mod point;
 mod ray;
 mod vec3;
 
-use rand::random;
+use rand::{random, rngs::ThreadRng, Rng};
 
 use std::{f32, sync::Arc, time};
 
@@ -22,56 +22,26 @@ use crate::{
     vec3::Vec3,
 };
 
-const ASPECT_RATIO: f32 = 16.0 / 9.0;
+const ASPECT_RATIO: f32 = 3.0 / 2.0;
 
 fn main() -> std::io::Result<()> {
     // Image
-    const IMAGE_WIDTH: u32 = 400;
+    const IMAGE_WIDTH: u32 = 1200;
     const IMAGE_HEIGHT: u32 = (IMAGE_WIDTH as f32 / ASPECT_RATIO) as u32;
-    const SAMPLES_PER_PIXEL: u16 = 100;
+    const SAMPLES_PER_PIXEL: u16 = 500;
     const OUTPUT_IMAGE_PATH: &str = "./target/image.ppm";
-    let mut image =
-        PPMImg::<{ IMAGE_WIDTH as usize }, { IMAGE_HEIGHT as usize }>::new(PPMImgMagicNum::P3);
+    let mut image = Box::new(
+        PPMImg::<{ IMAGE_WIDTH as usize }, { IMAGE_HEIGHT as usize }>::new(PPMImgMagicNum::P3),
+    );
 
     // World
-    let mut world: HittableList<Arc<dyn Hittable>> = HittableList::new();
-
-    let material_ground = Arc::new(Lambertian::new(Attenuation::new(Vec3::new(0.8, 0.8, 0.0))));
-    let material_center = Arc::new(Lambertian::new(Attenuation::new(Vec3::new(0.1, 0.2, 0.5))));
-    let material_left = Arc::new(Dielectric::new(1.5));
-    let material_right = Arc::new(Metal::new(Attenuation::new(Vec3::new(0.8, 0.6, 0.2)), 0.0));
-
-    world.add(Arc::new(Sphere::new(
-        Point3::new(0., -100.5, -1.),
-        100.0,
-        Arc::clone(&material_ground) as Arc<dyn Material>,
-    )));
-    world.add(Arc::new(Sphere::new(
-        Point3::new(0., 0., -1.),
-        0.5,
-        Arc::clone(&material_center) as Arc<dyn Material>,
-    )));
-    world.add(Arc::new(Sphere::new(
-        Point3::new(-1.0, 0.0, -1.0),
-        0.5,
-        Arc::clone(&material_left) as Arc<dyn Material>,
-    )));
-    world.add(Arc::new(Sphere::new(
-        Vec3::new(-1.0, 0.0, -1.0),
-        -0.4,
-        Arc::clone(&material_left) as Arc<dyn Material>,
-    )));
-    world.add(Arc::new(Sphere::new(
-        Point3::new(1.0, 0.0, -1.0),
-        0.5,
-        Arc::clone(&material_right) as Arc<dyn Material>,
-    )));
+    let world: HittableList<Arc<dyn Hittable>> = self::random_scene();
 
     // Camera
-    let look_from: Point3 = Point3::new(3.0, 3.0, 2.0);
-    let look_at: Point3 = Point3::new(0.0, 0.0, -1.0);
-    let disk_to_focus: f32 = (look_from - look_at).len();
-    const APERTURE: f32 = 2.0;
+    let look_from: Point3 = Point3::new(13.0, 2.0, 3.0);
+    let look_at: Point3 = Point3::new(0.0, 0.0, 0.0);
+    let disk_to_focus: f32 = 10.0;
+    const APERTURE: f32 = 0.1;
 
     let camera = Camera::new(
         look_from,
@@ -91,7 +61,7 @@ fn main() -> std::io::Result<()> {
     (0..IMAGE_HEIGHT).for_each(|row| {
         print!("\rScanlines remaining: {row}");
         (0..IMAGE_WIDTH).for_each(|column| {
-            let pixel_color: ColorRGB = pixel_color::<
+            let pixel_color: ColorRGB = self::pixel_color::<
                 { IMAGE_HEIGHT as usize },
                 { IMAGE_WIDTH as usize },
                 SAMPLES_PER_PIXEL,
@@ -147,4 +117,82 @@ fn pixel_color<const HEIGHT: usize, const WIDTH: usize, const SAMPLES: u16, cons
         .map(|v: f32| (v / SAMPLES as f32).sqrt());
 
     ColorRGBMapTo0_1::new(red, green, blue).into()
+}
+
+fn random_scene() -> HittableList<Arc<dyn Hittable>> {
+    let mut world: HittableList<Arc<dyn Hittable>> = HittableList::new();
+
+    let ground_material: Arc<Lambertian> =
+        Arc::new(Lambertian::new(Attenuation::new(Vec3::new(0.5, 0.5, 0.5))));
+    world.add(Arc::new(Sphere::new(
+        Vec3::new(0.0, -1000.0, 0.0),
+        1000.0,
+        ground_material as Arc<dyn Material>,
+    )));
+
+    let mut rng: ThreadRng = rand::thread_rng();
+
+    (-11..11).for_each(|a| {
+        (-11..11).for_each(|b| {
+            let choose_mat: f32 = random::<f32>();
+            let center: Point3 = Point3::new(
+                a as f32 + 0.9 * random::<f32>(),
+                0.2,
+                b as f32 + 0.9 * random::<f32>(),
+            );
+
+            if (center - Point3::new(4.0, 0.2, 0.0)).len() > 0.9 {
+                if choose_mat < 0.8 {
+                    // diffuse
+                    let albedo = Attenuation::random() * Attenuation::random();
+                    world.add(Arc::new(Sphere::new(
+                        center,
+                        0.2,
+                        Arc::new(Lambertian::new(albedo)) as Arc<dyn Material>,
+                    )));
+                } else if choose_mat < 0.95 {
+                    // metal
+                    let albedo = Attenuation::random_range(0.5, 1.0);
+                    let fuzz = rng.gen_range(0.0..0.5);
+                    world.add(Arc::new(Sphere::new(
+                        center,
+                        0.2,
+                        Arc::new(Metal::new(albedo, fuzz)) as Arc<dyn Material>,
+                    )));
+                } else {
+                    // glass
+                    world.add(Arc::new(Sphere::new(
+                        center,
+                        0.2,
+                        Arc::new(Dielectric::new(1.5)) as Arc<dyn Material>,
+                    )));
+                }
+            }
+        });
+    });
+
+    let material1: Arc<Dielectric> = Arc::new(Dielectric::new(1.5));
+    world.add(Arc::new(Sphere::new(
+        Point3::new(0.0, 1.0, 0.0),
+        1.0,
+        material1 as Arc<dyn Material>,
+    )));
+
+    let material2: Arc<Lambertian> =
+        Arc::new(Lambertian::new(Attenuation::new(Vec3::new(0.4, 0.2, 0.1))));
+    world.add(Arc::new(Sphere::new(
+        Point3::new(-4.0, 1.0, 0.0),
+        1.0,
+        material2 as Arc<dyn Material>,
+    )));
+
+    let material3: Arc<Metal> =
+        Arc::new(Metal::new(Attenuation::new(Vec3::new(0.7, 0.6, 0.5)), 0.0));
+    world.add(Arc::new(Sphere::new(
+        Point3::new(4.0, 1.0, 0.0),
+        1.0,
+        material3 as Arc<dyn Material>,
+    )));
+
+    world
 }
