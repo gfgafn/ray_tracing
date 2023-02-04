@@ -21,7 +21,7 @@ impl<M: AsRef<dyn Material>> Sphere<M> {
     }
 }
 
-impl<M: AsRef<dyn Material>> Hittable for Sphere<M> {
+impl<M: AsRef<dyn Material> + Send + Sync> Hittable for Sphere<M> {
     fn hit(&self, ray: &Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
         let oc: Vec3 = ray.origin() - self.center;
         let a: f32 = ray.direction().len_squared();

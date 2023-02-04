@@ -23,7 +23,7 @@ impl<H: AsRef<dyn Hittable>> HittableList<H> {
     }
 }
 
-impl<H: AsRef<dyn Hittable>> Hittable for HittableList<H> {
+impl<H: AsRef<dyn Hittable> + Send + Sync> Hittable for HittableList<H> {
     fn hit(&self, ray: &Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
         let mut hit: Option<HitRecord> = None;
         let mut closest_so_far: f32 = t_max;

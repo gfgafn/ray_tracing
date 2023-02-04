@@ -5,11 +5,17 @@ mod image;
 mod material;
 mod point;
 mod ray;
+mod thread_pool;
 mod vec3;
 
+extern crate num_cpus;
 use rand::{random, rngs::ThreadRng, Rng};
 
-use std::{f32, sync::Arc, time};
+use std::{
+    f32,
+    sync::{Arc, Mutex},
+    time,
+};
 
 use crate::{
     camera::Camera,
@@ -19,23 +25,30 @@ use crate::{
     material::{Attenuation, Dielectric, Lambertian, Material, Metal},
     point::Point3,
     ray::Ray,
+    thread_pool::ThreadPool,
     vec3::Vec3,
 };
 
 const ASPECT_RATIO: f32 = 3.0 / 2.0;
 
 fn main() -> std::io::Result<()> {
+    let num_cpus = num_cpus::get();
+    println!("num_cpus::get() : {num_cpus}");
+
+    let thread_pool: ThreadPool = ThreadPool::new(num_cpus);
+
     // Image
     const IMAGE_WIDTH: u32 = 1200;
     const IMAGE_HEIGHT: u32 = (IMAGE_WIDTH as f32 / ASPECT_RATIO) as u32;
     const SAMPLES_PER_PIXEL: u16 = 500;
     const OUTPUT_IMAGE_PATH: &str = "./target/image.ppm";
-    let mut image = Box::new(
-        PPMImg::<{ IMAGE_WIDTH as usize }, { IMAGE_HEIGHT as usize }>::new(PPMImgMagicNum::P3),
-    );
+    let image: Arc<Mutex<_>> = Arc::new(Mutex::new(PPMImg::<
+        { IMAGE_WIDTH as usize },
+        { IMAGE_HEIGHT as usize },
+    >::new(PPMImgMagicNum::P3)));
 
     // World
-    let world: HittableList<Arc<dyn Hittable>> = self::random_scene();
+    let world: Arc<HittableList<Arc<dyn Hittable>>> = Arc::new(self::random_scene());
 
     // Camera
     let look_from: Point3 = Point3::new(13.0, 2.0, 3.0);
@@ -43,7 +56,7 @@ fn main() -> std::io::Result<()> {
     let disk_to_focus: f32 = 10.0;
     const APERTURE: f32 = 0.1;
 
-    let camera = Camera::new(
+    let camera: Arc<Camera> = Arc::new(Camera::new(
         look_from,
         look_at,
         Vec3::new(0.0, 1.0, 0.0),
@@ -51,7 +64,7 @@ fn main() -> std::io::Result<()> {
         ASPECT_RATIO,
         APERTURE,
         disk_to_focus,
-    );
+    ));
 
     let time_render_start: time::Instant = time::Instant::now();
 
@@ -59,24 +72,39 @@ fn main() -> std::io::Result<()> {
     const MAX_DEPTH_RAY_RECURSION: u16 = 50;
 
     (0..IMAGE_HEIGHT).for_each(|row| {
-        print!("\rScanlines remaining: {row}");
         (0..IMAGE_WIDTH).for_each(|column| {
-            let pixel_color: ColorRGB = self::pixel_color::<
-                { IMAGE_HEIGHT as usize },
-                { IMAGE_WIDTH as usize },
-                SAMPLES_PER_PIXEL,
-                MAX_DEPTH_RAY_RECURSION,
-            >(row, column, &world, &camera);
-            image.set_pixel_color(row as usize, column as usize, pixel_color);
+            let image = Arc::clone(&image);
+            let world = Arc::clone(&world);
+            let camera = Arc::clone(&camera);
+
+            thread_pool.execute(move || {
+                print!("Scan lies remaining: {:3}\r", IMAGE_HEIGHT - row);
+
+                let pixel_color: ColorRGB = self::pixel_color::<
+                    { IMAGE_HEIGHT as usize },
+                    { IMAGE_WIDTH as usize },
+                    SAMPLES_PER_PIXEL,
+                    MAX_DEPTH_RAY_RECURSION,
+                >(row, column, world.as_ref(), &camera);
+
+                image
+                    .lock()
+                    .unwrap()
+                    .set_pixel_color(row as usize, column as usize, pixel_color);
+            })
         });
     });
+
+    std::mem::drop(thread_pool);
 
     println!(
         "\nThe render took {} seconds",
         time_render_start.elapsed().as_secs_f32()
     );
 
-    image.write_to_file(OUTPUT_IMAGE_PATH)
+    image.lock().unwrap().write_to_file(OUTPUT_IMAGE_PATH)?;
+
+    Ok(())
 }
 
 fn ray_color(ray: &Ray, world: &dyn Hittable, depth: u16) -> ColorRGBMapTo0_1 {

@@ -13,7 +13,7 @@ use crate::{
     vec3::Vec3,
 };
 
-pub trait Scatter {
+pub trait Scatter: Send + Sync {
     fn scatter(&self, ray_in: &Ray, hit_record: &HitRecord) -> Option<ScatterRecord>;
 }
 
