@@ -49,6 +49,6 @@ impl Point3 {
 
 impl std::fmt::Debug for Point3 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "Point-{}", self)
+        write!(f, "Point-{self}")
     }
 }

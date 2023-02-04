@@ -44,7 +44,7 @@ impl Drop for ThreadPool {
 
         self.workers.iter_mut().for_each(|worker| {
             if let Some(thread) = worker.thread.take() {
-                println!("Waiting for worker {} to shut down", worker.id);
+                // println!("Waiting for worker {} to shut down", worker.id);
                 thread.join().unwrap();
             }
         });
@@ -54,6 +54,7 @@ impl Drop for ThreadPool {
 }
 
 struct Worker {
+    #[allow(unused)]
     id: usize,
     thread: Option<thread::JoinHandle<()>>,
 }

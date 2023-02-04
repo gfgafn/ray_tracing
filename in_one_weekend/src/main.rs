@@ -12,7 +12,7 @@ extern crate num_cpus;
 use rand::{random, rngs::ThreadRng, Rng};
 
 use std::{
-    f32,
+    f32, mem,
     sync::{Arc, Mutex},
     time,
 };
@@ -38,17 +38,16 @@ fn main() -> std::io::Result<()> {
     let thread_pool: ThreadPool = ThreadPool::new(num_cpus);
 
     // Image
-    const IMAGE_WIDTH: u32 = 1200;
-    const IMAGE_HEIGHT: u32 = (IMAGE_WIDTH as f32 / ASPECT_RATIO) as u32;
-    const SAMPLES_PER_PIXEL: u16 = 500;
+    const IMAGE_WIDTH: usize = 1200;
+    const IMAGE_HEIGHT: usize = (IMAGE_WIDTH as f32 / ASPECT_RATIO) as usize;
+    const SAMPLES_PER_PIXEL: usize = 500;
     const OUTPUT_IMAGE_PATH: &str = "./target/image.ppm";
-    let image: Arc<Mutex<_>> = Arc::new(Mutex::new(PPMImg::<
-        { IMAGE_WIDTH as usize },
-        { IMAGE_HEIGHT as usize },
-    >::new(PPMImgMagicNum::P3)));
+    let image: Arc<Mutex<_>> = Arc::new(Mutex::new(PPMImg::<IMAGE_WIDTH, IMAGE_HEIGHT>::new(
+        PPMImgMagicNum::P3,
+    )));
 
     // World
-    let world: Arc<HittableList<Arc<dyn Hittable>>> = Arc::new(self::random_scene());
+    let world: Arc<HittableList<Box<dyn Hittable>>> = Arc::new(self::random_scene());
 
     // Camera
     let look_from: Point3 = Point3::new(13.0, 2.0, 3.0);
@@ -81,8 +80,8 @@ fn main() -> std::io::Result<()> {
                 print!("Scan lies remaining: {:3}\r", IMAGE_HEIGHT - row);
 
                 let pixel_color: ColorRGB = self::pixel_color::<
-                    { IMAGE_HEIGHT as usize },
-                    { IMAGE_WIDTH as usize },
+                    IMAGE_HEIGHT,
+                    IMAGE_WIDTH,
                     SAMPLES_PER_PIXEL,
                     MAX_DEPTH_RAY_RECURSION,
                 >(row, column, world.as_ref(), &camera);
@@ -90,12 +89,12 @@ fn main() -> std::io::Result<()> {
                 image
                     .lock()
                     .unwrap()
-                    .set_pixel_color(row as usize, column as usize, pixel_color);
+                    .set_pixel_color(row, column, pixel_color);
             })
         });
     });
 
-    std::mem::drop(thread_pool);
+    mem::drop(thread_pool);
 
     println!(
         "\nThe render took {} seconds",
@@ -126,16 +125,16 @@ fn ray_color(ray: &Ray, world: &dyn Hittable, depth: u16) -> ColorRGBMapTo0_1 {
     (1.0 - t) * ColorRGBMapTo0_1::new(1.0, 1.0, 1.0) + t * ColorRGBMapTo0_1::new(0.5, 0.7, 1.0)
 }
 
-fn pixel_color<const HEIGHT: usize, const WIDTH: usize, const SAMPLES: u16, const DEPTH: u16>(
-    row: u32,
-    column: u32,
+fn pixel_color<const HEIGHT: usize, const WIDTH: usize, const SAMPLES: usize, const DEPTH: u16>(
+    row: usize,
+    column: usize,
     world: &dyn Hittable,
     camera: &Camera,
 ) -> ColorRGB {
     let [red, green, blue] = (0..SAMPLES)
         .fold([0.0, 0.0, 0.0], |[r, g, b], _| {
             let u = (column as f32 + random::<f32>()) / (WIDTH - 1) as f32;
-            let v = ((HEIGHT - 1 - row as usize) as f32 + random::<f32>()) / (HEIGHT - 1) as f32;
+            let v = ((HEIGHT - 1 - row) as f32 + random::<f32>()) / (HEIGHT - 1) as f32;
             let ray: Ray = camera.get_ray(u, v);
             let ray_color: ColorRGBMapTo0_1 = ray_color(&ray, world, DEPTH);
 
@@ -147,12 +146,12 @@ fn pixel_color<const HEIGHT: usize, const WIDTH: usize, const SAMPLES: u16, cons
     ColorRGBMapTo0_1::new(red, green, blue).into()
 }
 
-fn random_scene() -> HittableList<Arc<dyn Hittable>> {
-    let mut world: HittableList<Arc<dyn Hittable>> = HittableList::new();
+fn random_scene() -> HittableList<Box<dyn Hittable>> {
+    let mut world: HittableList<Box<dyn Hittable>> = HittableList::new();
 
     let ground_material: Arc<Lambertian> =
         Arc::new(Lambertian::new(Attenuation::new(Vec3::new(0.5, 0.5, 0.5))));
-    world.add(Arc::new(Sphere::new(
+    world.add(Box::new(Sphere::new(
         Vec3::new(0.0, -1000.0, 0.0),
         1000.0,
         ground_material as Arc<dyn Material>,
@@ -173,7 +172,7 @@ fn random_scene() -> HittableList<Arc<dyn Hittable>> {
                 if choose_mat < 0.8 {
                     // diffuse
                     let albedo = Attenuation::random() * Attenuation::random();
-                    world.add(Arc::new(Sphere::new(
+                    world.add(Box::new(Sphere::new(
                         center,
                         0.2,
                         Arc::new(Lambertian::new(albedo)) as Arc<dyn Material>,
@@ -182,14 +181,14 @@ fn random_scene() -> HittableList<Arc<dyn Hittable>> {
                     // metal
                     let albedo = Attenuation::random_range(0.5, 1.0);
                     let fuzz = rng.gen_range(0.0..0.5);
-                    world.add(Arc::new(Sphere::new(
+                    world.add(Box::new(Sphere::new(
                         center,
                         0.2,
                         Arc::new(Metal::new(albedo, fuzz)) as Arc<dyn Material>,
                     )));
                 } else {
                     // glass
-                    world.add(Arc::new(Sphere::new(
+                    world.add(Box::new(Sphere::new(
                         center,
                         0.2,
                         Arc::new(Dielectric::new(1.5)) as Arc<dyn Material>,
@@ -200,7 +199,7 @@ fn random_scene() -> HittableList<Arc<dyn Hittable>> {
     });
 
     let material1: Arc<Dielectric> = Arc::new(Dielectric::new(1.5));
-    world.add(Arc::new(Sphere::new(
+    world.add(Box::new(Sphere::new(
         Point3::new(0.0, 1.0, 0.0),
         1.0,
         material1 as Arc<dyn Material>,
@@ -208,7 +207,7 @@ fn random_scene() -> HittableList<Arc<dyn Hittable>> {
 
     let material2: Arc<Lambertian> =
         Arc::new(Lambertian::new(Attenuation::new(Vec3::new(0.4, 0.2, 0.1))));
-    world.add(Arc::new(Sphere::new(
+    world.add(Box::new(Sphere::new(
         Point3::new(-4.0, 1.0, 0.0),
         1.0,
         material2 as Arc<dyn Material>,
@@ -216,7 +215,7 @@ fn random_scene() -> HittableList<Arc<dyn Hittable>> {
 
     let material3: Arc<Metal> =
         Arc::new(Metal::new(Attenuation::new(Vec3::new(0.7, 0.6, 0.5)), 0.0));
-    world.add(Arc::new(Sphere::new(
+    world.add(Box::new(Sphere::new(
         Point3::new(4.0, 1.0, 0.0),
         1.0,
         material3 as Arc<dyn Material>,

@@ -18,9 +18,9 @@ impl<H: AsRef<dyn Hittable>> HittableList<H> {
         self.objects.push(object)
     }
 
-    pub fn clear(&mut self) {
-        self.objects.clear()
-    }
+    // pub fn clear(&mut self) {
+    //     self.objects.clear()
+    // }
 }
 
 impl<H: AsRef<dyn Hittable> + Send + Sync> Hittable for HittableList<H> {
