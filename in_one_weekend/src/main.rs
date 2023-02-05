@@ -9,6 +9,7 @@ mod thread_pool;
 mod vec3;
 
 extern crate num_cpus;
+use humantime::format_duration;
 use rand::{random, rngs::ThreadRng, Rng};
 
 use std::{
@@ -97,8 +98,8 @@ fn main() -> std::io::Result<()> {
     mem::drop(thread_pool);
 
     println!(
-        "\nThe render took {} seconds",
-        time_render_start.elapsed().as_secs_f32()
+        "The render took {}",
+        format_duration(time_render_start.elapsed())
     );
 
     image.lock().unwrap().write_to_file(OUTPUT_IMAGE_PATH)?;
