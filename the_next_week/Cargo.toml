@@ -6,3 +6,7 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+humantime = { workspace = true }
+num_cpus = { workspace = true }
+rand = { workspace = true }
+in_one_weekend = { path = "../in_one_weekend" }
