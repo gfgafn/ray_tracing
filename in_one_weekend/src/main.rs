@@ -6,6 +6,7 @@ mod material;
 mod point;
 mod ray;
 mod thread_pool;
+mod utils;
 mod vec3;
 
 extern crate num_cpus;
@@ -70,16 +71,16 @@ fn main() -> std::io::Result<()> {
 
     // Render
     const MAX_DEPTH_RAY_RECURSION: u16 = 50;
+    let num_pixels_has_rendered: Arc<Mutex<usize>> = Arc::new(Mutex::new(0usize));
 
     (0..IMAGE_HEIGHT).for_each(|row| {
         (0..IMAGE_WIDTH).for_each(|column| {
             let image = Arc::clone(&image);
             let world = Arc::clone(&world);
             let camera = Arc::clone(&camera);
+            let num_pixels_has_rendered = Arc::clone(&num_pixels_has_rendered);
 
             thread_pool.execute(move || {
-                print!("Scan lies remaining: {:3}\r", IMAGE_HEIGHT - row);
-
                 let pixel_color: ColorRGB = self::pixel_color::<
                     IMAGE_HEIGHT,
                     IMAGE_WIDTH,
@@ -91,6 +92,14 @@ fn main() -> std::io::Result<()> {
                     .lock()
                     .unwrap()
                     .set_pixel_color(row, column, pixel_color);
+
+                if let Ok(mut num) = num_pixels_has_rendered.lock() {
+                    *num += 1;
+                    if *num % (IMAGE_HEIGHT * IMAGE_WIDTH / 1000) == 0 {
+                        utils::log_progress(*num as f64 / (IMAGE_HEIGHT * IMAGE_WIDTH) as f64)
+                            .unwrap();
+                    }
+                };
             })
         });
     });
