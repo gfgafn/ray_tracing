@@ -15,7 +15,7 @@ impl Lambertian {
 }
 
 impl Scatter for Lambertian {
-    fn scatter(&self, _ray_in: &Ray, hit_record: &HitRecord) -> Option<ScatterRecord> {
+    fn scatter(&self, ray_in: &Ray, hit_record: &HitRecord) -> Option<ScatterRecord> {
         let mut scatter_direction: Vec3 = hit_record.normal() + Vec3::random_unit_vector();
 
         // Catch degenerate scatter direction
@@ -24,7 +24,7 @@ impl Scatter for Lambertian {
         };
 
         Some(ScatterRecord::new(
-            Ray::new(hit_record.position(), scatter_direction),
+            Ray::new(hit_record.position(), scatter_direction, ray_in.time()),
             self.albedo,
         ))
     }

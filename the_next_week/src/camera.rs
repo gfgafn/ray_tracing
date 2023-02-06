@@ -1,4 +1,5 @@
 use in_one_weekend::{point::Point3, vec3::Vec3};
+use rand::Rng;
 
 use crate::ray::Ray;
 
@@ -12,6 +13,8 @@ pub struct Camera {
     #[allow(unused)]
     w: Vec3,
     lens_radius: f32,
+    time_0: f32,
+    time_1: f32,
 }
 
 impl Camera {
@@ -23,7 +26,11 @@ impl Camera {
         aspect_ratio: f32,
         aperture: f32,
         focus_dist: f32,
+        time_0: f32, // shutter open times
+        time_1: f32, // shutter close times
     ) -> Self {
+        debug_assert!(time_0 <= time_1);
+
         let theta: f32 = v_fov.to_radians();
         let h: f32 = (theta / 2.0).tan();
         let viewport_height: f32 = 2.0 * h;
@@ -49,6 +56,8 @@ impl Camera {
             v,
             w,
             lens_radius,
+            time_0,
+            time_1,
         }
     }
 
@@ -59,6 +68,7 @@ impl Camera {
         Ray::new(
             self.origin + offset,
             self.lower_left_corner + u * self.horizontal + v * self.vertical - self.origin - offset,
+            rand::thread_rng().gen_range(self.time_0..self.time_1),
         )
     }
 }

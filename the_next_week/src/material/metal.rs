@@ -31,6 +31,7 @@ impl Scatter for Metal {
             Ray::new(
                 hit_record.position(),
                 reflect_direction + self.fuzz * Vec3::random_in_unit_sphere(),
+                ray_in.time(),
             ),
             self.albedo,
         ))

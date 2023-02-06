@@ -23,12 +23,12 @@ use std::{
 
 use crate::{
     camera::Camera,
-    hittable::{hittable_list::HittableList, sphere::Sphere, Hittable},
+    hittable::{Hittable, HittableList, MovingSphere, Sphere},
     material::{Attenuation, Dielectric, Lambertian, Material, Metal},
     ray::Ray,
 };
 
-const ASPECT_RATIO: f32 = 3.0 / 2.0;
+const ASPECT_RATIO: f32 = 16.0 / 9.0;
 
 fn main() -> std::io::Result<()> {
     let num_cpus = num_cpus::get();
@@ -37,9 +37,9 @@ fn main() -> std::io::Result<()> {
     let thread_pool: ThreadPool = ThreadPool::new(num_cpus);
 
     // Image
-    const IMAGE_WIDTH: usize = 1200;
+    const IMAGE_WIDTH: usize = 400;
     const IMAGE_HEIGHT: usize = (IMAGE_WIDTH as f32 / ASPECT_RATIO) as usize;
-    const SAMPLES_PER_PIXEL: usize = 500;
+    const SAMPLES_PER_PIXEL: usize = 100;
     const OUTPUT_IMAGE_PATH: &str = "./target/image.ppm";
     let image: Arc<Mutex<_>> = Arc::new(Mutex::new(PPMImg::<IMAGE_WIDTH, IMAGE_HEIGHT>::new(
         PPMImgMagicNum::P3,
@@ -62,6 +62,8 @@ fn main() -> std::io::Result<()> {
         ASPECT_RATIO,
         APERTURE,
         disk_to_focus,
+        0.0,
+        1.0,
     ));
 
     let time_render_start: time::Instant = time::Instant::now();
@@ -179,8 +181,12 @@ fn random_scene() -> HittableList<Box<dyn Hittable>> {
                 if choose_mat < 0.8 {
                     // diffuse
                     let albedo = Attenuation::random() * Attenuation::random();
-                    world.add(Box::new(Sphere::new(
+                    let center_2: Point3 = center + Point3::new(0.0, rng.gen_range(0.0..0.5), 0.0);
+                    world.add(Box::new(MovingSphere::new(
                         center,
+                        center_2,
+                        0.0,
+                        1.0,
                         0.2,
                         Arc::new(Lambertian::new(albedo)) as Arc<dyn Material>,
                     )));

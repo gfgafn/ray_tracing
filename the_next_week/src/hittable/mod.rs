@@ -1,5 +1,10 @@
-pub mod hittable_list;
-pub mod sphere;
+mod hittable_list;
+mod sphere;
+
+pub use self::{
+    hittable_list::HittableList,
+    sphere::{MovingSphere, Sphere},
+};
 
 use in_one_weekend::{point::Point3, vec3::Vec3};
 

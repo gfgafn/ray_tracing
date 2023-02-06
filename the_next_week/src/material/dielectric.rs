@@ -47,7 +47,7 @@ impl Scatter for Dielectric {
         };
 
         Some(ScatterRecord::new(
-            Ray::new(hit_record.position(), direction),
+            Ray::new(hit_record.position(), direction, ray_in.time()),
             Attenuation::new(Vec3::new(1.0, 1.0, 1.0)),
         ))
     }
