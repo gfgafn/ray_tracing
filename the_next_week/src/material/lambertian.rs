@@ -1,20 +1,20 @@
 use in_one_weekend::vec3::Vec3;
 
-use crate::{hittable::HitRecord, ray::Ray};
+use crate::{hittable::HitRecord, ray::Ray, textures::Texture};
 
-use super::{Attenuation, Scatter, ScatterRecord};
+use super::{Scatter, ScatterRecord};
 
-pub struct Lambertian {
-    albedo: Attenuation,
+pub struct Lambertian<T: Texture> {
+    texture: T,
 }
 
-impl Lambertian {
-    pub fn new(albedo: Attenuation) -> Self {
-        Self { albedo }
+impl<T: Texture> Lambertian<T> {
+    pub fn new(texture: T) -> Self {
+        Self { texture }
     }
 }
 
-impl Scatter for Lambertian {
+impl<T: Texture + Send + Sync> Scatter for Lambertian<T> {
     fn scatter(&self, ray_in: &Ray, hit_record: &HitRecord) -> Option<ScatterRecord> {
         let mut scatter_direction: Vec3 = hit_record.normal() + Vec3::random_unit_vector();
 
@@ -25,7 +25,9 @@ impl Scatter for Lambertian {
 
         Some(ScatterRecord::new(
             Ray::new(hit_record.position(), scatter_direction, ray_in.time()),
-            self.albedo,
+            self.texture
+                .value(hit_record.u(), hit_record.v(), &hit_record.position())
+                .into(),
         ))
     }
 }

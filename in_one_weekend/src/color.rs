@@ -70,7 +70,7 @@ impl From<ColorRGBMapTo0_1> for ColorRGB {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone, Copy)]
 pub struct ColorRGBMapTo<const MIN: usize, const MAX: usize, T: Copy>(T, T, T);
 
 pub type ColorRGBMapTo0_1 = ColorRGBMapTo<0, 1, f32>;

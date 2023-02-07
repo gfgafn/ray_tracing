@@ -21,6 +21,24 @@ impl<M: AsRef<dyn Material>> Sphere<M> {
             material,
         }
     }
+
+    /// p: a given point on the sphere of radius one, centered at the origin.
+    ///
+    /// u: returned value [0,1] of angle around the Y axis from X=-1.
+    ///
+    /// v: returned value [0,1] of angle from Y=-1 to Y=+1.
+    ///
+    ///     <1 0 0> yields <0.50 0.50>       < -1  0  0> yields <0.00 0.50>
+    ///     <0 1 0> yields <0.50 1.00>       < 0 -1  0> yields <0.50 0.00>
+    ///     <0 0 1> yields <0.25 0.50>       < 0  0 -1> yields <0.75 0.50>
+    fn uv(p: &Point3) -> [f32; 2] {
+        let theta: f32 = (-p.y()).acos();
+        let phi: f32 = f32::atan2(-p.z(), p.x()) + core::f32::consts::PI;
+        let u = phi / (2.0 * core::f32::consts::PI);
+        let v = theta / core::f32::consts::PI;
+
+        [u, v]
+    }
 }
 
 impl<M: AsRef<dyn Material> + Send + Sync> Hittable for Sphere<M> {
@@ -51,6 +69,7 @@ impl<M: AsRef<dyn Material> + Send + Sync> Hittable for Sphere<M> {
             normal: outward_normal,
             front_face: true,
             material: self.material.as_ref(),
+            uv: Self::uv(&p),
         };
         hit_record.set_face_normal(ray, outward_normal);
 
@@ -97,6 +116,25 @@ impl<M: AsRef<dyn Material>> MovingSphere<M> {
         self.center_0
             + ((time - self.time_0) / (self.time_1 - self.time_0) * (self.center_1 - self.center_0))
     }
+
+    /// p: a given point on the sphere of radius one, centered at the origin.
+    ///
+    /// u: returned value [0,1] of angle around the Y axis from X=-1.
+    ///
+    /// v: returned value [0,1] of angle from Y=-1 to Y=+1.
+    ///
+    ///     <1 0 0> yields <0.50 0.50>       < -1  0  0> yields <0.00 0.50>
+    ///     <0 1 0> yields <0.50 1.00>       < 0 -1  0> yields <0.50 0.00>
+    ///     <0 0 1> yields <0.25 0.50>       < 0  0 -1> yields <0.75 0.50>
+    fn uv(p: &Point3) -> [f32; 2] {
+        let theta: f32 = (-p.y()).acos();
+        let phi: f32 = f32::atan2(-p.z(), p.x()) + core::f32::consts::PI;
+        let u = phi / (2.0 * core::f32::consts::PI);
+        let v = theta / core::f32::consts::PI;
+
+        [u, v]
+        // unimplemented!()
+    }
 }
 
 impl<M: AsRef<dyn Material> + Send + Sync> Hittable for MovingSphere<M> {
@@ -127,6 +165,7 @@ impl<M: AsRef<dyn Material> + Send + Sync> Hittable for MovingSphere<M> {
             normal: outward_normal,
             front_face: true,
             material: self.material.as_ref(),
+            uv: Self::uv(&p),
         };
         hit_record.set_face_normal(ray, outward_normal);
 

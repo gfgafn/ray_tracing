@@ -16,6 +16,7 @@ pub struct HitRecord<'a> {
     t: f32,
     front_face: bool,
     material: &'a dyn Material,
+    uv: [f32; 2],
 }
 
 impl<'a> HitRecord<'a> {
@@ -37,6 +38,16 @@ impl<'a> HitRecord<'a> {
     #[inline]
     pub fn is_front_face(&self) -> bool {
         self.front_face
+    }
+
+    #[inline]
+    pub fn u(&self) -> f32 {
+        self.uv[0]
+    }
+
+    #[inline]
+    pub fn v(&self) -> f32 {
+        self.uv[1]
     }
 
     pub fn set_face_normal(&mut self, ray: &Ray, outward_normal: Vec3) {

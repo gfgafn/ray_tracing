@@ -7,10 +7,6 @@ pub struct HittableList<H: AsRef<dyn Hittable>> {
 }
 
 impl<H: AsRef<dyn Hittable>> HittableList<H> {
-    pub fn new() -> Self {
-        Self { objects: vec![] }
-    }
-
     pub fn add(&mut self, object: H)
     where
         H: AsRef<dyn Hittable>,
@@ -21,6 +17,12 @@ impl<H: AsRef<dyn Hittable>> HittableList<H> {
     // pub fn clear(&mut self) {
     //     self.objects.clear()
     // }
+}
+
+impl<H: AsRef<dyn Hittable>> Default for HittableList<H> {
+    fn default() -> Self {
+        Self { objects: vec![] }
+    }
 }
 
 impl<H: AsRef<dyn Hittable> + Send + Sync> Hittable for HittableList<H> {

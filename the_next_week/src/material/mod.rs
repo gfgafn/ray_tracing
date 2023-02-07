@@ -97,6 +97,18 @@ impl ops::Mul<Self> for Attenuation {
     }
 }
 
+impl From<ColorRGBMapTo0_1> for Attenuation {
+    fn from(value: ColorRGBMapTo0_1) -> Self {
+        Self(Vec3::new(value.r(), value.g(), value.b()))
+    }
+}
+
+impl From<Attenuation> for ColorRGBMapTo0_1 {
+    fn from(val: Attenuation) -> Self {
+        ColorRGBMapTo0_1::new(val.0 .0, val.0 .1, val.0 .2)
+    }
+}
+
 fn reflect(vec_in: Vec3, normal: Vec3) -> Vec3 {
     vec_in - 2.0 * Vec3::dot(vec_in, normal) * normal
 }
