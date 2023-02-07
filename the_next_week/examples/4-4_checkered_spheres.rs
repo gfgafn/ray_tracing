@@ -1,9 +1,3 @@
-mod camera;
-mod hittable;
-mod material;
-mod ray;
-mod textures;
-
 extern crate num_cpus;
 use humantime::format_duration;
 use in_one_weekend::{
@@ -22,7 +16,7 @@ use std::{
     time,
 };
 
-use crate::{
+use the_next_week::{
     camera::Camera,
     hittable::{Hittable, HittableList, Sphere},
     material::{Lambertian, Material},
