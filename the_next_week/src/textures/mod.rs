@@ -1,6 +1,6 @@
 use in_one_weekend::{color::ColorRGBMapTo0_1, point::Point3};
 
-use crate::material::Attenuation;
+use crate::{material::Attenuation, noise::Perlin};
 
 pub trait Texture {
     fn value(&self, u: f32, v: f32, p: &Point3) -> ColorRGBMapTo0_1;
@@ -48,5 +48,21 @@ impl<T: Texture, U: Texture> Texture for CheckerTexture<T, U> {
         } else {
             self.even.value(u, v, p)
         }
+    }
+}
+
+pub struct NoiseTexture<T> {
+    noise: T,
+}
+
+impl<T> NoiseTexture<T> {
+    pub fn new(noise: T) -> Self {
+        Self { noise }
+    }
+}
+
+impl Texture for NoiseTexture<Perlin> {
+    fn value(&self, _u: f32, _v: f32, p: &Point3) -> ColorRGBMapTo0_1 {
+        ColorRGBMapTo0_1::new(1.0, 1.0, 1.0) * self.noise.noise(p)
     }
 }

@@ -1,6 +1,7 @@
 mod camera;
 mod hittable;
 mod material;
+mod noise;
 mod ray;
 mod textures;
 
@@ -26,8 +27,9 @@ use crate::{
     camera::Camera,
     hittable::{Hittable, HittableList, Sphere},
     material::{Lambertian, Material},
+    noise::Perlin,
     ray::Ray,
-    textures::{CheckerTexture, SolidColor},
+    textures::NoiseTexture,
 };
 
 const ASPECT_RATIO: f32 = 16.0 / 9.0;
@@ -48,7 +50,7 @@ fn main() -> std::io::Result<()> {
     )));
 
     // World
-    let world: Arc<HittableList<Box<dyn Hittable>>> = Arc::new(self::two_spheres());
+    let world: Arc<HittableList<Box<dyn Hittable>>> = Arc::new(self::two_perlin_spheres());
 
     // Camera
     let look_from: Point3 = Point3::new(13.0, 2.0, 3.0);
@@ -157,22 +159,19 @@ fn pixel_color<const HEIGHT: usize, const WIDTH: usize, const SAMPLES: usize, co
     ColorRGBMapTo0_1::new(red, green, blue).into()
 }
 
-fn two_spheres() -> HittableList<Box<dyn Hittable>> {
+fn two_perlin_spheres() -> HittableList<Box<dyn Hittable>> {
     let mut objects: HittableList<Box<dyn Hittable>> = HittableList::default();
-    let checker: CheckerTexture<SolidColor, SolidColor> = CheckerTexture::new(
-        ColorRGBMapTo0_1::new(0.2, 0.3, 0.1).into(),
-        ColorRGBMapTo0_1::new(0.9, 0.9, 0.9).into(),
-    );
-    let material = Arc::new(Lambertian::new(checker));
+    let pertext: NoiseTexture<Perlin> = NoiseTexture::new(Perlin::default());
+    let material: Arc<Lambertian<NoiseTexture<Perlin>>> = Arc::new(Lambertian::new(pertext));
 
     objects.add(Box::new(Sphere::new(
-        Point3::new(0.0, -10.0, 0.0),
-        10.0,
+        Point3::new(0.0, -1000.0, 0.0),
+        1000.0,
         Arc::clone(&material) as Arc<dyn Material>,
     )));
     objects.add(Box::new(Sphere::new(
-        Point3::new(0.0, 10.0, 0.0),
-        10.0,
+        Point3::new(0.0, 2.0, 0.0),
+        2.0,
         Arc::clone(&material) as Arc<dyn Material>,
     )));
 
