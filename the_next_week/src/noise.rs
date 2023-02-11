@@ -27,6 +27,18 @@ impl Perlin {
         Self::trilinear_interp(&c, u, v, w)
     }
 
+    pub fn turb(&self, p: &Point3, depth: usize) -> f32 {
+        (0..depth)
+            .fold(
+                (0.0, *p, 1.0),
+                |(accum, p, weight): (f32, Point3, f32), _| {
+                    (accum + weight * self.noise(&p), (p * 2.0), weight * 0.5)
+                },
+            )
+            .0
+            .abs()
+    }
+
     fn perlin_generate_perm() -> Box<[usize; Self::POINT_COUNT]> {
         let mut p = Box::new([0; Self::POINT_COUNT]);
         p.iter_mut()
