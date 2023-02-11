@@ -28,9 +28,11 @@ impl<M: AsRef<dyn Material>> Sphere<M> {
     ///
     /// v: returned value [0,1] of angle from Y=-1 to Y=+1.
     ///
-    ///     <1 0 0> yields <0.50 0.50>       < -1  0  0> yields <0.00 0.50>
-    ///     <0 1 0> yields <0.50 1.00>       < 0 -1  0> yields <0.50 0.00>
-    ///     <0 0 1> yields <0.25 0.50>       < 0  0 -1> yields <0.75 0.50>
+    /// <1 0 0> yields <0.50 0.50>       < -1  0  0> yields <0.00 0.50>
+    ///
+    /// <0 1 0> yields <0.50 1.00>       < 0 -1  0> yields <0.50 0.00>
+    ///
+    /// <0 0 1> yields <0.25 0.50>       < 0  0 -1> yields <0.75 0.50>
     fn uv(p: &Point3) -> [f32; 2] {
         let theta: f32 = (-p.y()).acos();
         let phi: f32 = f32::atan2(-p.z(), p.x()) + core::f32::consts::PI;
@@ -69,7 +71,7 @@ impl<M: AsRef<dyn Material> + Send + Sync> Hittable for Sphere<M> {
             normal: outward_normal,
             front_face: true,
             material: self.material.as_ref(),
-            uv: Self::uv(&p),
+            uv: Self::uv(&outward_normal),
         };
         hit_record.set_face_normal(ray, outward_normal);
 
@@ -123,9 +125,11 @@ impl<M: AsRef<dyn Material>> MovingSphere<M> {
     ///
     /// v: returned value [0,1] of angle from Y=-1 to Y=+1.
     ///
-    ///     <1 0 0> yields <0.50 0.50>       < -1  0  0> yields <0.00 0.50>
-    ///     <0 1 0> yields <0.50 1.00>       < 0 -1  0> yields <0.50 0.00>
-    ///     <0 0 1> yields <0.25 0.50>       < 0  0 -1> yields <0.75 0.50>
+    /// <1 0 0> yields <0.50 0.50>       < -1  0  0> yields <0.00 0.50>
+    ///
+    /// <0 1 0> yields <0.50 1.00>       < 0 -1  0> yields <0.50 0.00>
+    ///
+    /// <0 0 1> yields <0.25 0.50>       < 0  0 -1> yields <0.75 0.50>
     fn uv(p: &Point3) -> [f32; 2] {
         let theta: f32 = (-p.y()).acos();
         let phi: f32 = f32::atan2(-p.z(), p.x()) + core::f32::consts::PI;
@@ -133,7 +137,6 @@ impl<M: AsRef<dyn Material>> MovingSphere<M> {
         let v = theta / core::f32::consts::PI;
 
         [u, v]
-        // unimplemented!()
     }
 }
 
@@ -165,7 +168,7 @@ impl<M: AsRef<dyn Material> + Send + Sync> Hittable for MovingSphere<M> {
             normal: outward_normal,
             front_face: true,
             material: self.material.as_ref(),
-            uv: Self::uv(&p),
+            uv: Self::uv(&outward_normal),
         };
         hit_record.set_face_normal(ray, outward_normal);
 
