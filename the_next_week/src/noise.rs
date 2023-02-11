@@ -12,7 +12,9 @@ impl Perlin {
     const POINT_COUNT: usize = 256;
 
     pub fn noise(&self, p: &Point3) -> f32 {
-        let [u, v, w]: [f32; 3] = [p.x(), p.y(), p.z()].map(|v| v - v.floor());
+        let [u, v, w]: [f32; 3] = [p.x(), p.y(), p.z()]
+            .map(|v| v - v.floor())
+            .map(|v| v * v * (3.0 - 2.0 * v));
         let [i, j, k]: [usize; 3] = [p.x(), p.y(), p.z()].map(|v| v.floor() as usize);
         let mut c: [[[f32; 2]; 2]; 2] = [[[0f32; 2]; 2]; 2];
         (0..c.len()).for_each(|di| {
