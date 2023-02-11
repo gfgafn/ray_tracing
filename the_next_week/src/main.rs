@@ -161,7 +161,7 @@ fn pixel_color<const HEIGHT: usize, const WIDTH: usize, const SAMPLES: usize, co
 
 fn two_perlin_spheres() -> HittableList<Box<dyn Hittable>> {
     let mut objects: HittableList<Box<dyn Hittable>> = HittableList::default();
-    let pertext: NoiseTexture<Perlin> = NoiseTexture::new(Perlin::default());
+    let pertext: NoiseTexture<Perlin> = NoiseTexture::new(Perlin::default()).set_scale(4.0);
     let material: Arc<Lambertian<NoiseTexture<Perlin>>> = Arc::new(Lambertian::new(pertext));
 
     objects.add(Box::new(Sphere::new(

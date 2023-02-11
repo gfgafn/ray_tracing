@@ -132,11 +132,20 @@ impl ops::SubAssign for Vec3 {
         *self = Self(self.0 - rhs.0, self.1 - rhs.1, self.2 - rhs.2)
     }
 }
+
 impl ops::Mul<f32> for Vec3 {
     type Output = Self;
 
     fn mul(self, rhs: f32) -> Self::Output {
         Self(self.0 * rhs, self.1 * rhs, self.2 * rhs)
+    }
+}
+
+impl ops::Mul<f32> for &Vec3 {
+    type Output = Vec3;
+
+    fn mul(self, rhs: f32) -> Self::Output {
+        Vec3(self.0 * rhs, self.1 * rhs, self.2 * rhs)
     }
 }
 
