@@ -12,9 +12,19 @@ impl Perlin {
     const POINT_COUNT: usize = 256;
 
     pub fn noise(&self, p: &Point3) -> f32 {
-        let [i, j, k]: [usize; 3] = [p.x(), p.y(), p.z()].map(|v| (4.0 * v) as usize & 255);
-
-        self.ranfloat[self.perm_x[i] ^ self.perm_y[j] ^ self.perm_z[k]]
+        let [u, v, w]: [f32; 3] = [p.x(), p.y(), p.z()].map(|v| v - v.floor());
+        let [i, j, k]: [usize; 3] = [p.x(), p.y(), p.z()].map(|v| v.floor() as usize);
+        let mut c: [[[f32; 2]; 2]; 2] = [[[0f32; 2]; 2]; 2];
+        (0..c.len()).for_each(|di| {
+            (0..2).for_each(|dj| {
+                (0..2).for_each(|dk| {
+                    c[di][dj][dk] = self.ranfloat[self.perm_x[(i + di) & 255]
+                        ^ self.perm_y[(j + dj) & 255]
+                        ^ self.perm_z[(k + dk) & 255]]
+                })
+            })
+        });
+        Self::trilinear_interp(&c, u, v, w)
     }
 
     fn perlin_generate_perm() -> Box<[usize; Self::POINT_COUNT]> {
@@ -33,6 +43,21 @@ impl Perlin {
             let target = rand::thread_rng().gen_range(0..index);
             p.swap(index, target);
         })
+    }
+
+    fn trilinear_interp(c: &[[[f32; 2]; 2]; 2], u: f32, v: f32, w: f32) -> f32 {
+        (0..2)
+            .flat_map(|i| {
+                (0..2).flat_map(move |j| {
+                    (0..2).map(move |k| {
+                        (i as f32).mul_add(u, (1 - i) as f32 * (1.0 - u))
+                            * (j as f32).mul_add(v, (1 - j) as f32 * (1.0 - v))
+                            * (k as f32).mul_add(w, (1 - k) as f32 * (1.0 - w))
+                            * c[i][j][k]
+                    })
+                })
+            })
+            .sum()
     }
 }
 
