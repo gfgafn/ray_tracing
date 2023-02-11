@@ -10,3 +10,4 @@ humantime = { workspace = true }
 num_cpus = { workspace = true }
 rand = { workspace = true }
 in_one_weekend = { path = "../in_one_weekend" }
+image = { version = "0.24.5", default-features = false, features = ["jpeg"] }
