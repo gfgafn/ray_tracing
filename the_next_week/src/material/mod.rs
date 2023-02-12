@@ -1,25 +1,35 @@
 mod dielectric;
+mod diffuse_light;
 mod lambertian;
 mod metal;
 
 use in_one_weekend::{
     color::{ColorRGB, ColorRGBMapTo0_1},
+    point::Point3,
     vec3::Vec3,
 };
 
-pub use self::{dielectric::Dielectric, lambertian::Lambertian, metal::Metal};
+pub use self::{
+    dielectric::Dielectric, diffuse_light::DiffuseLight, lambertian::Lambertian, metal::Metal,
+};
 
 use std::ops;
 
 use crate::{hittable::HitRecord, ray::Ray};
 
-pub trait Scatter: Send + Sync {
+pub trait Scatter {
     fn scatter(&self, ray_in: &Ray, hit_record: &HitRecord) -> Option<ScatterRecord>;
 }
 
-pub trait Material: Scatter {}
+pub trait Emit {
+    fn emitted(&self, _u: f32, _v: f32, _p: &Point3) -> Option<EmitRecord> {
+        None
+    }
+}
 
-impl<T: Scatter> Material for T {}
+pub trait Material: Scatter + Emit + Send + Sync {}
+
+impl<T: Scatter + Emit + Send + Sync> Material for T {}
 
 pub struct ScatterRecord {
     ray: Ray,
@@ -119,4 +129,25 @@ fn refract(unit_vec_in: Vec3, normal: Vec3, etai_over_etat: f32) -> Vec3 {
     let ray_out_parallel: Vec3 = -(1.0 - ray_out_perp.len_squared()).abs().sqrt() * normal;
 
     ray_out_perp + ray_out_parallel
+}
+
+pub struct EmitRecord {
+    color: ColorRGBMapTo0_1,
+    luminance: f32,
+}
+
+impl EmitRecord {
+    // pub fn new(color: ColorRGBMapTo0_1, luminance: f32) -> Self {
+    //     Self { color, luminance }
+    // }
+
+    #[inline]
+    pub fn color(&self) -> ColorRGBMapTo0_1 {
+        self.color
+    }
+
+    #[inline]
+    pub fn luminance(&self) -> f32 {
+        self.luminance
+    }
 }

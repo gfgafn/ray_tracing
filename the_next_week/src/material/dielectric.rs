@@ -3,7 +3,7 @@ use rand::random;
 
 use crate::{hittable::HitRecord, ray::Ray};
 
-use super::{reflect, refract, Attenuation, Scatter, ScatterRecord};
+use super::{reflect, refract, Attenuation, Emit, Scatter, ScatterRecord};
 
 pub struct Dielectric {
     // Index of Refraction
@@ -22,6 +22,8 @@ impl Dielectric {
         r0 + (1.0 - r0) * (1.0 - cosine).powi(5)
     }
 }
+
+impl Emit for Dielectric {}
 
 impl Scatter for Dielectric {
     fn scatter(&self, ray_in: &Ray, hit_record: &HitRecord) -> Option<ScatterRecord> {

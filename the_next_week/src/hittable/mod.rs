@@ -1,8 +1,10 @@
 mod hittable_list;
+mod rect;
 mod sphere;
 
 pub use self::{
     hittable_list::HittableList,
+    rect::XYRect,
     sphere::{MovingSphere, Sphere},
 };
 

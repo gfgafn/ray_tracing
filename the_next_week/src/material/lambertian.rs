@@ -2,7 +2,7 @@ use in_one_weekend::vec3::Vec3;
 
 use crate::{hittable::HitRecord, ray::Ray, textures::Texture};
 
-use super::{Scatter, ScatterRecord};
+use super::{Emit, Scatter, ScatterRecord};
 
 pub struct Lambertian<T: Texture> {
     texture: T,
@@ -14,7 +14,9 @@ impl<T: Texture> Lambertian<T> {
     }
 }
 
-impl<T: Texture + Send + Sync> Scatter for Lambertian<T> {
+impl<T: Texture> Emit for Lambertian<T> {}
+
+impl<T: Texture> Scatter for Lambertian<T> {
     fn scatter(&self, ray_in: &Ray, hit_record: &HitRecord) -> Option<ScatterRecord> {
         let mut scatter_direction: Vec3 = hit_record.normal() + Vec3::random_unit_vector();
 

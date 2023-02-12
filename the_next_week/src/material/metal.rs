@@ -2,7 +2,7 @@ use in_one_weekend::vec3::Vec3;
 
 use crate::{hittable::HitRecord, ray::Ray};
 
-use super::{reflect, Attenuation, Scatter, ScatterRecord};
+use super::{reflect, Attenuation, Emit, Scatter, ScatterRecord};
 
 pub struct Metal {
     albedo: Attenuation,
@@ -17,6 +17,8 @@ impl Metal {
         }
     }
 }
+
+impl Emit for Metal {}
 
 impl Scatter for Metal {
     fn scatter(&self, ray_in: &Ray, hit_record: &HitRecord) -> Option<ScatterRecord> {
