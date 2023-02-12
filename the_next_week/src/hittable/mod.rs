@@ -4,7 +4,7 @@ mod sphere;
 
 pub use self::{
     hittable_list::HittableList,
-    rect::XYRect,
+    rect::{XYRect, XZRect, YZRect},
     sphere::{MovingSphere, Sphere},
 };
 
