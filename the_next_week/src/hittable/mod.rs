@@ -1,11 +1,13 @@
 mod cuboid;
 mod hittable_list;
+mod instance;
 mod rect;
 mod sphere;
 
 pub use self::{
     cuboid::Cuboid,
     hittable_list::HittableList,
+    instance::Instance,
     rect::{XYRect, XZRect, YZRect},
     sphere::{MovingSphere, Sphere},
 };

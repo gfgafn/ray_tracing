@@ -96,6 +96,12 @@ impl ops::AddAssign for Vec3 {
     }
 }
 
+impl ops::AddAssign<&Self> for Vec3 {
+    fn add_assign(&mut self, rhs: &Self) {
+        *self = Self(self.0 + rhs.0, self.1 + rhs.1, self.2 + rhs.2);
+    }
+}
+
 impl ops::Add<f32> for Vec3 {
     type Output = Self;
     fn add(self, rhs: f32) -> Self::Output {
@@ -218,6 +224,7 @@ mod tests {
         assert_eq!(Vec3(2.0, 4.0, 6.0), v * 2f32);
         assert_eq!(Vec3(3.0, 4.0, 3.0), v * Vec3(3.0, 2.0, 1.0));
         v += Vec3(-1.0, -2.0, -3.0);
+        v += &Vec3(0.0, 0.0, 0.0);
         assert_eq!(Vec3(0.0, 0.0, 0.0), v);
         v -= Vec3(-1.0, -2.0, -3.0);
         assert_eq!(Vec3(1.0, 2.0, 3.0), v);
