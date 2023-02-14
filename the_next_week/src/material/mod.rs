@@ -1,16 +1,18 @@
 mod dielectric;
 mod diffuse_light;
+mod isotropic;
 mod lambertian;
 mod metal;
+
+pub use self::{
+    dielectric::Dielectric, diffuse_light::DiffuseLight, isotropic::Isotropic,
+    lambertian::Lambertian, metal::Metal,
+};
 
 use in_one_weekend::{
     color::{ColorRGB, ColorRGBMapTo0_1},
     point::Point3,
     vec3::Vec3,
-};
-
-pub use self::{
-    dielectric::Dielectric, diffuse_light::DiffuseLight, lambertian::Lambertian, metal::Metal,
 };
 
 use std::ops;
