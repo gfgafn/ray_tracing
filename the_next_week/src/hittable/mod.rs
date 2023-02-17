@@ -1,6 +1,7 @@
 mod cuboid;
 mod hittable_list;
 mod instance;
+mod medium;
 mod rect;
 mod sphere;
 
@@ -8,6 +9,7 @@ pub use self::{
     cuboid::Cuboid,
     hittable_list::HittableList,
     instance::Instance,
+    medium::ConstantMedium,
     rect::{XYRect, XZRect, YZRect},
     sphere::{MovingSphere, Sphere},
 };
