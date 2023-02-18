@@ -67,7 +67,9 @@ impl<M: AsRef<dyn Material> + Send + Sync> Hittable for Sphere<M> {
         }
 
         let p: Point3 = ray.at(t);
-        let outward_normal: Vec3 = (p - self.center) / self.radius;
+        // `(p - self.center) / self.radius` will make an vector which length is infinite
+        // when `self.radius` is near 0
+        let outward_normal: Vec3 = (p - self.center).unit_vector();
         let mut hit_record = HitRecord {
             t,
             p,
@@ -167,7 +169,9 @@ impl<M: AsRef<dyn Material> + Send + Sync> Hittable for MovingSphere<M> {
         }
 
         let p: Point3 = ray.at(t);
-        let outward_normal: Vec3 = (p - self.center(ray.time())) / self.radius;
+        // `(p - self.center(ray.time())) / self.radius` will make an vector which length is infinite
+        // when `self.radius` is near 0
+        let outward_normal: Vec3 = (p - self.center(ray.time())).unit_vector();
         let mut hit_record = HitRecord {
             t,
             p,
