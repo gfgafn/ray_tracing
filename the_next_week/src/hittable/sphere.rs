@@ -58,9 +58,12 @@ impl<M: AsRef<dyn Material> + Send + Sync> Hittable for Sphere<M> {
         // Find the nearest root that lies in the acceptable range.
         // half_b < 0 && a > 0
         // assert!((-half_b - dis_sqrt) / a <= (-half_b + dis_sqrt) / a);
-        let t: f32 = (-half_b - dis_sqrt) / a;
+        let mut t: f32 = (-half_b - dis_sqrt) / a;
         if !(t_min..=t_max).contains(&t) {
-            return None;
+            t = (-half_b + dis_sqrt) / a;
+            if !(t_min..=t_max).contains(&t) {
+                return None;
+            }
         }
 
         let p: Point3 = ray.at(t);
@@ -155,9 +158,12 @@ impl<M: AsRef<dyn Material> + Send + Sync> Hittable for MovingSphere<M> {
         // Find the nearest root that lies in the acceptable range.
         // half_b < 0 && a > 0
         // assert!((-half_b - dis_sqrt) / a <= (-half_b + dis_sqrt) / a);
-        let t: f32 = (-half_b - dis_sqrt) / a;
+        let mut t: f32 = (-half_b - dis_sqrt) / a;
         if !(t_min..=t_max).contains(&t) {
-            return None;
+            t = (-half_b + dis_sqrt) / a;
+            if !(t_min..=t_max).contains(&t) {
+                return None;
+            }
         }
 
         let p: Point3 = ray.at(t);

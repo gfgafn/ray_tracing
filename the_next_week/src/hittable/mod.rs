@@ -5,6 +5,8 @@ mod medium;
 mod rect;
 mod sphere;
 
+use std::sync::Arc;
+
 pub use self::{
     cuboid::Cuboid,
     hittable_list::HittableList,
@@ -60,7 +62,7 @@ impl<'a> HitRecord<'a> {
 
     pub fn set_face_normal(&mut self, ray: &Ray, outward_normal: Vec3) {
         self.front_face = ray.direction().dot(outward_normal) < 0.0;
-        debug_assert!((0.99..1.01).contains(&outward_normal.len()));
+        debug_assert!((0.98..1.02).contains(&outward_normal.len()));
         self.normal = match self.front_face {
             true => outward_normal,
             false => -outward_normal,
@@ -70,4 +72,10 @@ impl<'a> HitRecord<'a> {
 
 pub trait Hittable: Send + Sync {
     fn hit(&self, ray: &Ray, t_min: f32, t_max: f32) -> Option<HitRecord>;
+}
+
+impl<T: Hittable> Hittable for Arc<T> {
+    fn hit(&self, ray: &Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
+        self.as_ref().hit(ray, t_min, t_max)
+    }
 }

@@ -17,6 +17,12 @@ impl<H: AsRef<dyn Hittable>> HittableList<H> {
     // pub fn clear(&mut self) {
     //     self.objects.clear()
     // }
+
+    pub fn with_capacity(capacity: usize) -> Self {
+        Self {
+            objects: Vec::with_capacity(capacity),
+        }
+    }
 }
 
 impl<H: AsRef<dyn Hittable>> Default for HittableList<H> {
