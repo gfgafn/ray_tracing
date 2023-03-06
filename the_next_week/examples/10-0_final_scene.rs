@@ -53,17 +53,19 @@ fn main() -> std::io::Result<()> {
     let disk_to_focus: f32 = 10.0;
     const APERTURE: f32 = 0.1;
 
-    let camera: Arc<Camera> = Arc::new(Camera::new(
-        look_from,
-        look_at,
-        Vec3::new(0.0, 1.0, 0.0),
-        40.0,
-        ASPECT_RATIO,
-        APERTURE,
-        disk_to_focus,
-        0.0,
-        1.0,
-    ));
+    let camera: Arc<Camera> = Arc::new(
+        Camera::builder()
+            .look_from(look_from)
+            .look_at(look_at)
+            .up(Vec3::new(0.0, 1.0, 0.0))
+            .fov(40.0)
+            .aspect_ratio(ASPECT_RATIO)
+            .aperture(APERTURE)
+            .focus_dist(disk_to_focus)
+            .time_0(0.0)
+            .time_1(1.0)
+            .build(),
+    );
 
     let time_render_start: time::Instant = time::Instant::now();
 
