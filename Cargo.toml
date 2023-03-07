@@ -1,2 +1,7 @@
 [workspace]
-members = ['in_one_weekend']
+members = ['in_one_weekend', 'the_next_week']
+
+[workspace.dependencies]
+humantime = "2.1.0"
+num_cpus = "1.15.0"
+rand = "0.8.5"

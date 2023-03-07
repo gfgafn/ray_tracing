@@ -24,6 +24,21 @@ impl Point3 {
         self.2
     }
 
+    #[inline]
+    pub fn x_mut(&mut self) -> &mut f32 {
+        &mut self.0
+    }
+
+    #[inline]
+    pub fn y_mut(&mut self) -> &mut f32 {
+        &mut self.1
+    }
+
+    #[inline]
+    pub fn z_mut(&mut self) -> &mut f32 {
+        &mut self.2
+    }
+
     pub fn random() -> Self {
         Self(random(), random(), random())
     }
