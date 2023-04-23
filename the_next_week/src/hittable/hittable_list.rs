@@ -35,17 +35,13 @@ impl<H: AsRef<dyn Hittable> + Send + Sync> Hittable for HittableList<H> {
     fn hit(&self, ray: &Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
         self.objects
             .iter()
-            .fold(
-                (None, t_max),
-                |(mut current_hit_record, mut closest_so_far), object: &H| {
-                    if let Some(hit_record) = object.as_ref().hit(ray, t_min, closest_so_far) {
-                        debug_assert!(t_min <= hit_record.t && hit_record.t <= closest_so_far);
-                        closest_so_far = hit_record.t;
-                        current_hit_record = Some(hit_record);
-                    }
-                    (current_hit_record, closest_so_far)
-                },
-            )
-            .0
+            .filter_map(|object| object.as_ref().hit(ray, t_min, t_max))
+            .reduce(|closest_hit_record, current_hit_record| {
+                if current_hit_record.t < closest_hit_record.t {
+                    current_hit_record
+                } else {
+                    closest_hit_record
+                }
+            })
     }
 }
