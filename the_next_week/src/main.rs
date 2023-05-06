@@ -18,7 +18,6 @@ use in_one_weekend::{
 use rand::{random, Rng};
 
 use std::{
-    mem,
     sync::{Arc, Mutex},
     time,
 };
@@ -111,14 +110,39 @@ fn main() -> std::io::Result<()> {
         });
     });
 
-    mem::drop(thread_pool);
+    {
+        let num_pixels_has_rendered = Arc::clone(&num_pixels_has_rendered);
+        thread_pool.execute(move || {
+            while let Ok(num_mutex_guard) = num_pixels_has_rendered.lock() {
+                if *num_mutex_guard == IMAGE_HEIGHT * IMAGE_WIDTH {
+                    break;
+                }
+            }
 
-    println!(
-        "The render took {}",
-        format_duration(time_render_start.elapsed())
-    );
+            eprintln!(
+                "The render took {}",
+                format_duration(time_render_start.elapsed())
+            );
+        });
+    }
 
-    image.lock().unwrap().write_to_file(OUTPUT_IMAGE_PATH)?;
+    thread_pool.execute(move || {
+        while let Ok(num_mutex_guard) = num_pixels_has_rendered.lock() {
+            if *num_mutex_guard == IMAGE_HEIGHT * IMAGE_WIDTH {
+                break;
+            }
+        }
+
+        image
+            .lock()
+            .map(|img_mutex_guard| {
+                eprintln!("Writing image to file···");
+                img_mutex_guard.write_to_file(OUTPUT_IMAGE_PATH)
+            })
+            .unwrap_or_else(|p_err| p_err.into_inner().write_to_file(OUTPUT_IMAGE_PATH))
+            .map(|_| eprintln!("Writing image to file done!"))
+            .unwrap_or_else(|err| eprintln!("Writing image to file failed! {}", err))
+    });
 
     Ok(())
 }
