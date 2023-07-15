@@ -9,14 +9,15 @@ use crate::color::ColorRGB;
 #[derive(Clone, Copy)]
 pub enum PPMImgMagicNum {
     P3,
+    #[allow(unused)]
     P6,
 }
 
-impl From<PPMImgMagicNum> for String {
-    fn from(value: PPMImgMagicNum) -> Self {
-        match value {
-            PPMImgMagicNum::P3 => "P3".to_string(),
-            PPMImgMagicNum::P6 => "P6".to_string(),
+impl core::fmt::Display for PPMImgMagicNum {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        match self {
+            PPMImgMagicNum::P3 => write!(f, "P3"),
+            PPMImgMagicNum::P6 => write!(f, "P6"),
         }
     }
 }
@@ -52,22 +53,17 @@ impl<const WIDTH: usize, const HEIGHT: usize> PPMImg<WIDTH, HEIGHT> {
 
     pub fn write_to_file<P: AsRef<Path>>(&self, path: P) -> io::Result<()> {
         let mut image: BufWriter<File> = BufWriter::new(File::create(path)?);
-        image.write_all(
-            format!(
-                "{}\n{WIDTH} {HEIGHT}\n{}\n",
-                String::from(self.magic_number),
-                self.max_color_component
-            )
-            .as_bytes(),
-        )?;
+
+        writeln!(image, "{}", self.magic_number)?;
+        writeln!(image, "{WIDTH} {HEIGHT}")?;
+        writeln!(image, "{}", self.max_color_component)?;
+
         for row in &self.data_buffer {
             match self.magic_number {
                 PPMImgMagicNum::P3 => {
-                    image.write_all(
-                        row.map(|c: ColorRGB| format!("{} {} {}\n", c.r(), c.g(), c.b()))
-                            .concat()
-                            .as_bytes(),
-                    )?;
+                    for color in row {
+                        writeln!(image, "{} {} {}", color.r(), color.g(), color.b())?;
+                    }
                 }
                 PPMImgMagicNum::P6 => {
                     for color in row {
